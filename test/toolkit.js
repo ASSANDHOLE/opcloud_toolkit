@@ -16,7 +16,7 @@ Globals exposed:
 - cleanupSingleBoot
 */
 
-(function () {
+(async function () {
     if (window.__opcloudSingleBootToolkitLoaded) {
         console.log("OPCloud single-boot toolkit already loaded");
         return;
@@ -44,7 +44,7 @@ Globals exposed:
     };
 
     function log(kind, payload) {
-        const item = { t: Date.now(), kind, payload };
+        const item = {t: Date.now(), kind, payload};
         BOOT.logs.push(item);
         console.log(`[OPSINGLE] ${kind}`, payload);
         return item;
@@ -215,7 +215,7 @@ Globals exposed:
                 }));
             }
         } catch (e) {
-            logicalStates = { error: String(e) };
+            logicalStates = {error: String(e)};
         }
 
         const report = {
@@ -351,9 +351,18 @@ Globals exposed:
 
     function makeDataTransfer(kind) {
         const dt = new DataTransfer();
-        try { dt.setData("text/plain", kind); } catch {}
-        try { dt.setData("text/opcloud", kind); } catch {}
-        try { dt.setData("application/opcloud", JSON.stringify({ type: kind })); } catch {}
+        try {
+            dt.setData("text/plain", kind);
+        } catch {
+        }
+        try {
+            dt.setData("text/opcloud", kind);
+        } catch {
+        }
+        try {
+            dt.setData("application/opcloud", JSON.stringify({type: kind}));
+        } catch {
+        }
         return dt;
     }
 
@@ -411,13 +420,19 @@ Globals exposed:
             buttons: 0
         };
 
-        try { el.dispatchEvent(new PointerEvent("pointerdown", down)); } catch {}
+        try {
+            el.dispatchEvent(new PointerEvent("pointerdown", down));
+        } catch {
+        }
         el.dispatchEvent(new MouseEvent("mousedown", down));
-        try { el.dispatchEvent(new PointerEvent("pointerup", up)); } catch {}
+        try {
+            el.dispatchEvent(new PointerEvent("pointerup", up));
+        } catch {
+        }
         el.dispatchEvent(new MouseEvent("mouseup", up));
         el.dispatchEvent(new MouseEvent("click", up));
 
-        return { x, y };
+        return {x, y};
     }
 
     function cleanupGhostUi() {
@@ -427,14 +442,24 @@ Globals exposed:
                 ghost.style.left = "-800px";
                 ghost.style.transform = "";
                 ghost.style.pointerEvents = "none";
-            } catch {}
+            } catch {
+            }
         }
 
-        try { document.body.style.cursor = ""; } catch {}
-        try { document.documentElement.style.cursor = ""; } catch {}
+        try {
+            document.body.style.cursor = "";
+        } catch {
+        }
+        try {
+            document.documentElement.style.cursor = "";
+        } catch {
+        }
 
         const active = document.activeElement;
-        try { active?.blur?.(); } catch {}
+        try {
+            active?.blur?.();
+        } catch {
+        }
     }
 
     /* -----------------------------
@@ -645,7 +670,7 @@ Globals exposed:
             try {
                 await ensureUiSeedCaptured();
             } catch (e) {
-                log("ensureUiSeedCaptured.failed", { error: String(e) });
+                log("ensureUiSeedCaptured.failed", {error: String(e)});
             }
         }
 
@@ -739,24 +764,51 @@ Globals exposed:
             const orderedVisualStates = stateIds.map(id => visualStates.find(v => v?.id === id)).filter(Boolean);
             if (orderedVisualStates.length === names.length) {
                 orderedVisualStates.forEach((s, i) => {
-                    try { s.text = names[i]; } catch {}
-                    try { s.label = names[i]; } catch {}
-                    try { s.name = names[i]; } catch {}
+                    try {
+                        s.text = names[i];
+                    } catch {
+                    }
+                    try {
+                        s.label = names[i];
+                    } catch {
+                    }
+                    try {
+                        s.name = names[i];
+                    } catch {
+                    }
                 });
             } else {
                 visualStates.slice(0, names.length).forEach((s, i) => {
-                    try { s.text = names[i]; } catch {}
-                    try { s.label = names[i]; } catch {}
-                    try { s.name = names[i]; } catch {}
+                    try {
+                        s.text = names[i];
+                    } catch {
+                    }
+                    try {
+                        s.label = names[i];
+                    } catch {
+                    }
+                    try {
+                        s.name = names[i];
+                    } catch {
+                    }
                 });
             }
         }
 
         if (logicalStates) {
             logicalStates.slice(0, names.length).forEach((s, i) => {
-                try { s.text = names[i]; } catch {}
-                try { s.label = names[i]; } catch {}
-                try { s.name = names[i]; } catch {}
+                try {
+                    s.text = names[i];
+                } catch {
+                }
+                try {
+                    s.label = names[i];
+                } catch {
+                }
+                try {
+                    s.name = names[i];
+                } catch {
+                }
             });
         }
 
@@ -862,7 +914,7 @@ Globals exposed:
             const currentLabel = getLabelFromModel(stateModel);
             const desiredLabel = desiredNames[i];
             if (currentLabel === desiredLabel) continue;
-            const rep = await renameNodeAio(stateModel, desiredLabel, { onExisting: "rename" });
+            const rep = await renameNodeAio(stateModel, desiredLabel, {onExisting: "rename"});
             renameReports.push(rep);
             model = refreshModelRef(model) || model;
         }
@@ -894,27 +946,27 @@ Globals exposed:
             if ((essence !== 0 && essence !== 1) || (affiliation !== 0 && affiliation !== 1)) {
                 throw new Error("Essence object must use numeric essence/affiliation values (0 or 1)");
             }
-            return { essence, affiliation };
+            return {essence, affiliation};
         }
 
         const key = String(spec).trim().toLowerCase();
         const map = {
-            "systemic+physical": { essence: 0, affiliation: 0 },
-            "systemic physical": { essence: 0, affiliation: 0 },
-            "physical+systemic": { essence: 0, affiliation: 0 },
-            "physical systemic": { essence: 0, affiliation: 0 },
-            "systemic+informatical": { essence: 1, affiliation: 0 },
-            "systemic informatical": { essence: 1, affiliation: 0 },
-            "informatical+systemic": { essence: 1, affiliation: 0 },
-            "informatical systemic": { essence: 1, affiliation: 0 },
-            "environmental+physical": { essence: 0, affiliation: 1 },
-            "environmental physical": { essence: 0, affiliation: 1 },
-            "physical+environmental": { essence: 0, affiliation: 1 },
-            "physical environmental": { essence: 0, affiliation: 1 },
-            "environmental+informatical": { essence: 1, affiliation: 1 },
-            "environmental informatical": { essence: 1, affiliation: 1 },
-            "informatical+environmental": { essence: 1, affiliation: 1 },
-            "informatical environmental": { essence: 1, affiliation: 1 }
+            "systemic+physical": {essence: 0, affiliation: 0},
+            "systemic physical": {essence: 0, affiliation: 0},
+            "physical+systemic": {essence: 0, affiliation: 0},
+            "physical systemic": {essence: 0, affiliation: 0},
+            "systemic+informatical": {essence: 1, affiliation: 0},
+            "systemic informatical": {essence: 1, affiliation: 0},
+            "informatical+systemic": {essence: 1, affiliation: 0},
+            "informatical systemic": {essence: 1, affiliation: 0},
+            "environmental+physical": {essence: 0, affiliation: 1},
+            "environmental physical": {essence: 0, affiliation: 1},
+            "physical+environmental": {essence: 0, affiliation: 1},
+            "physical environmental": {essence: 0, affiliation: 1},
+            "environmental+informatical": {essence: 1, affiliation: 1},
+            "environmental informatical": {essence: 1, affiliation: 1},
+            "informatical+environmental": {essence: 1, affiliation: 1},
+            "informatical environmental": {essence: 1, affiliation: 1}
         };
 
         const out = map[key];
@@ -973,7 +1025,10 @@ Globals exposed:
             logical.opmModel.logForUndo?.("Rename thing to existing");
             logical.opmModel.moveVisualsBetweenLogicals(logical, existence.exist);
             init.graphService?.renderGraph?.(init.opmModel.currentOpd, init, null, false, true);
-            try { init.criticalChanges_?.next?.(true); } catch {}
+            try {
+                init.criticalChanges_?.next?.(true);
+            } catch {
+            }
 
             const reboundLogical = model.getVisual?.()?.logicalElement || null;
             const after = {
@@ -1000,16 +1055,41 @@ Globals exposed:
         try {
             logical.opmModel.logForUndo?.((logical.text || before.attrLabel || "thing") + " name change");
             logical.opmModel.setShouldLogForUndoRedo?.(false, "name change");
-        } catch {}
+        } catch {
+        }
 
-        try { logical.textModule.name.autoFormatting = false; } catch {}
-        try { logical.text = value; } catch {}
-        try { logical.textForListLogical = value; } catch {}
-        try { model.attr({ text: { textWrap: { text: value } } }); } catch {}
-        try { model.updateSiblings(visual, init); } catch {}
-        try { model.updateView(visual); } catch {}
-        try { init.graphService?.renderGraph?.(init.opmModel.currentOpd, init, null, false, true); } catch {}
-        try { init.criticalChanges_?.next?.(true); } catch {}
+        try {
+            logical.textModule.name.autoFormatting = false;
+        } catch {
+        }
+        try {
+            logical.text = value;
+        } catch {
+        }
+        try {
+            logical.textForListLogical = value;
+        } catch {
+        }
+        try {
+            model.attr({text: {textWrap: {text: value}}});
+        } catch {
+        }
+        try {
+            model.updateSiblings(visual, init);
+        } catch {
+        }
+        try {
+            model.updateView(visual);
+        } catch {
+        }
+        try {
+            init.graphService?.renderGraph?.(init.opmModel.currentOpd, init, null, false, true);
+        } catch {
+        }
+        try {
+            init.criticalChanges_?.next?.(true);
+        } catch {
+        }
 
         const after = {
             attrLabel: getLabelFromModel(model),
@@ -1058,12 +1138,18 @@ Globals exposed:
 
         if (preferDirectRemove && typeof init.onRemoveOptionChosen === "function") {
             if (typeof init.setElementToRemoveToNull === "function") {
-                try { init.setElementToRemoveToNull(); } catch {}
+                try {
+                    init.setElementToRemoveToNull();
+                } catch {
+                }
             }
             init.elementToRemove = model;
             init.onRemoveOptionChosen(model, removeType);
             if (typeof init.setElementToRemoveToNull === "function") {
-                try { init.setElementToRemoveToNull(); } catch {}
+                try {
+                    init.setElementToRemoveToNull();
+                } catch {
+                }
             }
             invocation = `onRemoveOptionChosen(${removeType})`;
             if (deleteDelayMs > 0) {
@@ -1084,14 +1170,20 @@ Globals exposed:
             }
 
             if (typeof init.setElementToRemoveToNull === "function") {
-                try { init.setElementToRemoveToNull(); } catch {}
+                try {
+                    init.setElementToRemoveToNull();
+                } catch {
+                }
             }
 
             if (typeof init.onRemoveOptionChosen === "function") {
                 init.elementToRemove = model;
                 init.onRemoveOptionChosen(model, removeType);
                 if (typeof init.setElementToRemoveToNull === "function") {
-                    try { init.setElementToRemoveToNull(); } catch {}
+                    try {
+                        init.setElementToRemoveToNull();
+                    } catch {
+                    }
                 }
                 invocation = `onRemoveOptionChosen(${removeType})`;
                 if (deleteDelayMs > 0) {
@@ -1217,8 +1309,8 @@ Globals exposed:
             isCondition: params.isCondition === true,
             isEvent: params.isEvent === true,
             isNegation: params.isNegation === true,
-            ...(params.path !== undefined ? { path: params.path } : {}),
-            ...(params.linkRequirements !== undefined ? { linkRequirements: params.linkRequirements } : {})
+            ...(params.path !== undefined ? {path: params.path} : {}),
+            ...(params.linkRequirements !== undefined ? {linkRequirements: params.linkRequirements} : {})
         };
     }
 
@@ -1261,7 +1353,7 @@ Globals exposed:
         };
     }
 
-    async function addLinkAio(source, target, params, { redraw = true } = {}) {
+    async function addLinkAio(source, target, params, {redraw = true} = {}) {
         await ensureUiSeedCaptured();
 
         const init = BOOT.capturedUiSeed.init;
@@ -1306,7 +1398,7 @@ Globals exposed:
         };
 
         log("addLinkAio", report);
-        return { created, report };
+        return {created, report};
     }
 
     function getCurrentOpd() {
@@ -1323,6 +1415,85 @@ Globals exposed:
             childCount: Array.isArray(opd.children) ? opd.children.length : null,
             visualCount: Array.isArray(opd.visualElements) ? opd.visualElements.length : null
         };
+    }
+
+    function getOpdById(opdId) {
+        const opds = BOOT.capturedUiSeed.init?.opmModel?.opds || [];
+        return opds.find(o => o?.id === opdId) || null;
+    }
+
+    function getOpdPathById(opdId) {
+        const opds = BOOT.capturedUiSeed.init?.opmModel?.opds || [];
+        const byId = new Map(opds.map(o => [o?.id, o]));
+        const parts = [];
+        const seen = new Set();
+        let cur = byId.get(opdId) || null;
+        while (cur && !seen.has(cur.id)) {
+            seen.add(cur.id);
+            parts.push(cur.name ?? cur.id ?? null);
+            if (!cur.parendId || cur.parendId === cur.id) break;
+            cur = byId.get(cur.parendId) || null;
+        }
+        return parts.reverse().filter(Boolean);
+    }
+
+    function getCurrentOpdPath() {
+        const opd = getCurrentOpd();
+        return opd?.id ? getOpdPathById(opd.id) : [];
+    }
+
+    function findOpdByNamePath(path) {
+        const wanted = JSON.stringify(path || []);
+        const opds = BOOT.capturedUiSeed.init?.opmModel?.opds || [];
+        return opds.find(o => JSON.stringify(getOpdPathById(o?.id)) === wanted) || null;
+    }
+
+    function findCurrentNodeByTypeAndLabel(type, label) {
+        return getMainElementModels().find(m => getNodeType(m) === type && getLabelFromModel(m) === label) || null;
+    }
+
+    function findCurrentStateByParentLabelAndLabel(parentLabel, stateLabel) {
+        const parent = findCurrentNodeByTypeAndLabel("opm.Object", parentLabel);
+        if (!parent) return null;
+        return getStatesByVisualOrder(parent).find(s => getLabelFromModel(s) === stateLabel) || null;
+    }
+
+    function getRuntimeNodeNameKey(model) {
+        const type = getNodeType(model);
+        const label = getLabelFromModel(model);
+        if (!label) return null;
+        if (type === "opm.Object") return `object:${label}`;
+        if (type === "opm.Process") return `process:${label}`;
+        if (type === "opm.State") {
+            const j = model?.toJSON?.() || {};
+            const parentId = j?.parent ?? null;
+            const parent = parentId ? getCurrentGraphCells().find(c => getIdFromModel(c) === parentId) : null;
+            const parentLabelResolved = parent ? getLabelFromModel(parent) : null;
+            return parentLabelResolved ? `object:${parentLabelResolved}/state:${label}` : `state:${label}`;
+        }
+        return `${type || "unknown"}:${label}`;
+    }
+
+    function resolveNameFriendlyEndpoint(ref) {
+        if (!ref) return null;
+        if (typeof ref === "string") {
+            if (ref.startsWith("object:")) {
+                return findCurrentNodeByTypeAndLabel("opm.Object", ref.slice("object:".length));
+            }
+            if (ref.startsWith("process:")) {
+                return findCurrentNodeByTypeAndLabel("opm.Process", ref.slice("process:".length));
+            }
+            if (ref.startsWith("object:") && ref.includes("/state:")) {
+                const m = ref.match(/^object:(.*)\/state:(.*)$/);
+                if (m) return findCurrentStateByParentLabelAndLabel(m[1], m[2]);
+            }
+            const stateMatch = ref.match(/^object:(.*)\/state:(.*)$/);
+            if (stateMatch) {
+                return findCurrentStateByParentLabelAndLabel(stateMatch[1], stateMatch[2]);
+            }
+            return findAnyModelByLabel(ref);
+        }
+        return null;
     }
 
     function summarizeGraphCell(cell) {
@@ -1372,7 +1543,7 @@ Globals exposed:
         const dom = getDomForModel(model);
         if (!dom) throw new Error("Could not find DOM element for unfold target");
 
-        return { model, init, dom };
+        return {model, init, dom};
     }
 
     function diffRuntimeSnapshots(before, after) {
@@ -1437,7 +1608,7 @@ Globals exposed:
         await ensureUiSeedCaptured();
 
         const before = snapshotRuntimeState();
-        const { model, init, dom } = getUnfoldActionForTarget(target);
+        const {model, init, dom} = getUnfoldActionForTarget(target);
 
         log("unfoldTargetAio.select", {
             id: getIdFromModel(model),
@@ -1462,7 +1633,7 @@ Globals exposed:
             action.unfoldAction(init, true);
             invocation = "action.unfoldAction(init,true)";
         } else if (clean && preferDirectClean && typeof action.unfold === "function") {
-            action.unfold(init, thingId, { clean: true });
+            action.unfold(init, thingId, {clean: true});
             invocation = "action.unfold(init,thingId,{clean:true})";
         } else if (typeof action.act === "function") {
             action.act();
@@ -1559,11 +1730,11 @@ Globals exposed:
         const treeViewService = init?.treeViewService || null;
         const treeView = treeViewService?.treeView || null;
         const treeModel = treeView?.treeModel || null;
-        return { treeViewService, treeView, treeModel };
+        return {treeViewService, treeView, treeModel};
     }
 
     function listOpdTreeNodes() {
-        const { treeModel } = getTreeRuntime();
+        const {treeModel} = getTreeRuntime();
         const opds = BOOT.capturedUiSeed.init?.opmModel?.opds || [];
         const rows = opds.map(opd => {
             const node = treeModel?.getNodeById ? treeModel.getNodeById(opd.id) : null;
@@ -1585,6 +1756,8 @@ Globals exposed:
     function inspectCurrentFundamentalGroups() {
         const cells = getCurrentGraphCells();
         const byId = new Map(cells.map(c => [getIdFromModel(c), c]));
+        const currentOpd = getCurrentOpd();
+        const currentOpdPath = getCurrentOpdPath();
 
         const triangles = cells.filter(c => {
             const t = getNodeType(c);
@@ -1612,11 +1785,24 @@ Globals exposed:
                 return /AggregationLink|ExhibitionLink/i.test(ctor) && j?.source?.id === triId;
             });
 
+            const ownerSourceId = ownerLink?.toJSON?.()?.source?.id ?? null;
+            const ownerSource = ownerSourceId ? byId.get(ownerSourceId) : null;
+            const ownerLabel = ownerSource ? getLabelFromModel(ownerSource) : null;
+            const ownerType = ownerSource ? getNodeType(ownerSource) : null;
+            const ownerNameKey = ownerSource ? getRuntimeNodeNameKey(ownerSource) : null;
+
             return {
+                currentOpdId: currentOpd?.id ?? null,
+                currentOpdName: currentOpd?.name ?? null,
+                currentOpdPath,
                 triangleId: triId,
                 triangle: tri,
+                trianglePosition: getPositionFromModel(tri),
                 ownerLinkId: ownerLink ? getIdFromModel(ownerLink) : null,
                 ownerLink,
+                ownerLabel,
+                ownerType,
+                ownerNameKey,
                 memberLinkIds: memberLinks.map(l => getIdFromModel(l)),
                 memberLinks,
                 memberTargetIds: memberLinks.map(l => (l.toJSON?.()?.target?.id ?? null)),
@@ -1624,13 +1810,25 @@ Globals exposed:
                     const tid = l.toJSON?.()?.target?.id ?? null;
                     const target = tid ? byId.get(tid) : null;
                     return target ? getLabelFromModel(target) : null;
+                }),
+                memberTargetTypes: memberLinks.map(l => {
+                    const tid = l.toJSON?.()?.target?.id ?? null;
+                    const target = tid ? byId.get(tid) : null;
+                    return target ? getNodeType(target) : null;
+                }),
+                memberTargetNameKeys: memberLinks.map(l => {
+                    const tid = l.toJSON?.()?.target?.id ?? null;
+                    const target = tid ? byId.get(tid) : null;
+                    return target ? getRuntimeNodeNameKey(target) : null;
                 })
             };
         });
 
         log("inspectCurrentFundamentalGroups", out.map(g => ({
+            currentOpdName: g.currentOpdName,
             triangleId: g.triangleId,
             ownerLinkId: g.ownerLinkId,
+            ownerLabel: g.ownerLabel,
             memberLinkIds: g.memberLinkIds,
             memberTargetLabels: g.memberTargetLabels
         })));
@@ -1709,29 +1907,42 @@ Globals exposed:
         return report;
     }
 
-    function navigateToOpdAio(opdId, { expandParents = true, activate = true, render = true } = {}) {
+    function navigateToOpdAio(opdId, {expandParents = true, activate = true, render = true} = {}) {
         const init = BOOT.capturedUiSeed.init;
         const opmModel = init?.opmModel;
         const opd = Array.isArray(opmModel?.opds) ? opmModel.opds.find(o => o?.id === opdId) : null;
         if (!opd) throw new Error(`OPD not found: ${opdId}`);
 
-        const { treeViewService, treeModel } = getTreeRuntime();
+        const {treeViewService, treeModel} = getTreeRuntime();
         const node = treeModel?.getNodeById ? treeModel.getNodeById(opdId) : null;
 
         if (expandParents && node?.parent?.expand) {
-            try { node.parent.expand(); } catch {}
+            try {
+                node.parent.expand();
+            } catch {
+            }
         }
         if (activate && node?.toggleActivated) {
-            try { node.toggleActivated(); } catch {}
+            try {
+                node.toggleActivated();
+            } catch {
+            }
         }
         if (render && init?.graphService?.renderGraph) {
             init.graphService.renderGraph(opd, init);
         }
-        try { opmModel.currentOpd = opd; } catch {}
-        try { if (treeViewService?.currentOPD) treeViewService.currentOPD = opdId; } catch {}
+        try {
+            opmModel.currentOpd = opd;
+        } catch {
+        }
+        try {
+            if (treeViewService?.currentOPD) treeViewService.currentOPD = opdId;
+        } catch {
+        }
 
         const report = {
             target: summarizeOpd(opd),
+            targetPath: getOpdPathById(opd.id),
             treeNodeFound: !!node,
             afterCurrentOpd: summarizeOpd(getCurrentOpd())
         };
@@ -1739,14 +1950,24 @@ Globals exposed:
         return report;
     }
 
+    function navigateToOpdByNamePathAio(path, {expandParents = true, activate = true, render = false} = {}) {
+        const opd = findOpdByNamePath(path);
+        if (!opd?.id) throw new Error(`OPD path not found: ${JSON.stringify(path)}`);
+        return navigateToOpdAio(opd.id, {expandParents, activate, render});
+    }
+
+    function setCurrentOpdWithoutRenderAio(opdId, {expandParents = true, activate = true} = {}) {
+        return navigateToOpdAio(opdId, {expandParents, activate, render: false});
+    }
+
     function installUnfoldProbeOnTarget(target) {
-        const { model, init } = getUnfoldActionForTarget(target);
+        const {model, init} = getUnfoldActionForTarget(target);
         const cell = init?.graph?.getCell ? init.graph.getCell(getIdFromModel(model)) : null;
         if (!cell || typeof cell.unfoldAction !== "function") {
             throw new Error("Target cell does not expose unfoldAction");
         }
         if (cell.__opsingleUnfoldProbeInstalled) {
-            return { alreadyInstalled: true, targetId: getIdFromModel(model) };
+            return {alreadyInstalled: true, targetId: getIdFromModel(model)};
         }
 
         const orig = cell.unfoldAction;
@@ -1783,21 +2004,21 @@ Globals exposed:
 
         cell.__opsingleUnfoldProbeInstalled = true;
         cell.__opsingleUnfoldProbeOrig = orig;
-        const report = { installed: true, targetId: getIdFromModel(model), targetLabel: getLabelFromModel(model) };
+        const report = {installed: true, targetId: getIdFromModel(model), targetLabel: getLabelFromModel(model)};
         log("installUnfoldProbeOnTarget", report);
         return report;
     }
 
     function removeUnfoldProbeFromTarget(target) {
-        const { model, init } = getUnfoldActionForTarget(target);
+        const {model, init} = getUnfoldActionForTarget(target);
         const cell = init?.graph?.getCell ? init.graph.getCell(getIdFromModel(model)) : null;
         if (!cell || !cell.__opsingleUnfoldProbeInstalled || typeof cell.__opsingleUnfoldProbeOrig !== "function") {
-            return { removed: false, targetId: getIdFromModel(model) };
+            return {removed: false, targetId: getIdFromModel(model)};
         }
         cell.unfoldAction = cell.__opsingleUnfoldProbeOrig;
         delete cell.__opsingleUnfoldProbeOrig;
         delete cell.__opsingleUnfoldProbeInstalled;
-        const report = { removed: true, targetId: getIdFromModel(model), targetLabel: getLabelFromModel(model) };
+        const report = {removed: true, targetId: getIdFromModel(model), targetLabel: getLabelFromModel(model)};
         log("removeUnfoldProbeFromTarget", report);
         return report;
     }
@@ -1808,7 +2029,11 @@ Globals exposed:
 
     function exportCurrentOpdV2() {
         function safe(fn, fallback = null) {
-            try { return fn(); } catch { return fallback; }
+            try {
+                return fn();
+            } catch {
+                return fallback;
+            }
         }
 
         function getGraph() {
@@ -1874,6 +2099,18 @@ Globals exposed:
             };
         }
 
+        function summarizeTriangleExport(m) {
+            const j = getJson(m);
+            return {
+                id: getIdFromModel(m),
+                type: getNodeType(m),
+                ctor: getCtor(m),
+                position: j.position || null,
+                size: j.size || null,
+                angle: j.angle ?? null
+            };
+        }
+
         function classifyLinkExport(m) {
             const ctor = getCtor(m) || "";
             const logicalCtor = getLogical(m)?.constructor?.name || "";
@@ -1936,10 +2173,12 @@ Globals exposed:
 
         const nodeSummaries = [...objects, ...processes].map(summarizeNodeExport);
         const stateSummaries = states.map(summarizeStateExport);
+        const triangleSummaries = triangles.map(summarizeTriangleExport);
         const linkSummaries = links.map(summarizeLinkExport);
 
         const nodeById = Object.fromEntries(nodeSummaries.map(n => [n.id, n]));
         const stateById = Object.fromEntries(stateSummaries.map(s => [s.id, s]));
+        const triangleById = Object.fromEntries(triangleSummaries.map(t => [t.id, t]));
         const triangleIds = new Set(triangles.map(getIdFromModel));
 
         const statesByParent = {};
@@ -2019,9 +2258,15 @@ Globals exposed:
             const ownerId = ownerByTriangle[triangleId] || null;
             const memberLinks = membersByTriangle[triangleId] || [];
             const ownerLink = ownerLinkByTriangle[triangleId] || null;
+            const triangle = triangleById[triangleId] || null;
 
             return {
                 triangleId,
+                triangleGeometry: triangle ? {
+                    position: triangle.position || null,
+                    size: triangle.size || null,
+                    angle: triangle.angle ?? null
+                } : null,
                 ownerId,
                 ownerLabel: resolveEntityLabel(ownerId),
                 ownerType: resolveEntityType(ownerId),
@@ -2125,7 +2370,7 @@ Globals exposed:
 
         const entries = [];
         for (const opd of opds) {
-            navigateToOpdAio(opd.id, { expandParents: true, activate: true, render: true });
+            navigateToOpdAio(opd.id, {expandParents: true, activate: true, render: true});
             const local = exportCurrentOpdV2();
             const contents = listCurrentOpdContents();
             const scaffold = classifyUnfoldScaffold(contents);
@@ -2148,8 +2393,9 @@ Globals exposed:
 
         if (previousCurrentOpd?.id) {
             try {
-                navigateToOpdAio(previousCurrentOpd.id, { expandParents: true, activate: true, render: true });
-            } catch {}
+                navigateToOpdAio(previousCurrentOpd.id, {expandParents: true, activate: true, render: true});
+            } catch {
+            }
         }
 
         const exportData = {
@@ -2171,7 +2417,7 @@ Globals exposed:
         return exportData;
     }
 
-    async function importOpdData(data, { cleanupBefore = false } = {}) {
+    async function importOpdData(data, {cleanupBefore = false} = {}) {
         function assert(cond, msg) {
             if (!cond) throw new Error(msg);
         }
@@ -2197,22 +2443,66 @@ Globals exposed:
             };
         }
 
-        function getRuntimeStatesForObject(model) {
-            return getStatesByVisualOrder(model);
+        function isSelfInvocationExportedLink(link) {
+            if (!link) return false;
+            if (link.linkType === 5) return true;
+            const ctor = String(link.ctor || "");
+            return /SelfInvocation/i.test(ctor);
         }
 
-        function mapExportStateOrderToRuntime(parentModel, exportedStates) {
-            const runtimeStates = getRuntimeStatesForObject(parentModel);
-            if (runtimeStates.length !== exportedStates.length) {
-                throw new Error(
-                    `State count mismatch for ${getLabelFromModel(parentModel)}: runtime=${runtimeStates.length}, exported=${exportedStates.length}`
-                );
-            }
+        function isSelfInvocationRuntimeLink(link) {
+            if (!link) return false;
+            const ctor = String(link?.constructor?.name || "");
+            const logicalType = link?.logicalElement?.linkType ?? null;
+            const j = link?.toJSON?.() || {};
+            const sid = j?.source?.id ?? null;
+            const tid = j?.target?.id ?? null;
+            return logicalType === 5 || /SelfInvocation/i.test(ctor) || (!!sid && sid === tid);
+        }
 
-            return exportedStates.map((exp, i) => ({
-                exported: exp,
-                runtime: runtimeStates[i]
-            }));
+        function getCellById(id) {
+            return getCurrentGraphCells().find(c => getIdFromModel(c) === id) || null;
+        }
+
+        function refreshLinksByIds(linkIds) {
+            const init = BOOT.capturedUiSeed.init;
+            const links = linkIds.map(id => getCellById(id)).filter(Boolean);
+            try {
+                init?.graphService?.updateLinksView?.(links);
+            } catch {
+            }
+            return links;
+        }
+
+        function buildNodeRefFromModel(model) {
+            const refreshed = refreshModelRef(model) || model;
+            return {
+                kind: "node",
+                nodeType: getNodeType(refreshed),
+                label: getLabelFromModel(refreshed)
+            };
+        }
+
+        function buildStateRef(parentModelOrLabel, stateLabel) {
+            const parentLabel = typeof parentModelOrLabel === "string"
+                ? parentModelOrLabel
+                : getLabelFromModel(refreshModelRef(parentModelOrLabel) || parentModelOrLabel);
+            return {
+                kind: "state",
+                parentLabel,
+                label: stateLabel
+            };
+        }
+
+        function resolveRuntimeRef(ref) {
+            if (!ref) return null;
+            if (ref.kind === "node") {
+                return findCurrentNodeByTypeAndLabel(ref.nodeType, ref.label) || null;
+            }
+            if (ref.kind === "state") {
+                return findCurrentStateByParentLabelAndLabel(ref.parentLabel, ref.label) || null;
+            }
+            return null;
         }
 
         function buildLinkParamsFromProceduralLink(link) {
@@ -2236,12 +2526,13 @@ Globals exposed:
         }
 
         async function applyNodeGeometry(model, exportedNode) {
+            const refreshed = refreshModelRef(model) || model;
             const p = exportedNode?.position;
             if (p && typeof p.x === "number" && typeof p.y === "number") {
-                model.position(p.x, p.y);
+                refreshed.position(p.x, p.y);
             }
             return {
-                runtimeId: getIdFromModel(model),
+                runtimeId: getIdFromModel(refreshed),
                 applied: !!p
             };
         }
@@ -2254,13 +2545,69 @@ Globals exposed:
             };
         }
 
-        async function applyLinkGeometry(_createdLink, exportedGeometry) {
+        async function applyLinkGeometry(runtimeLinkId, exportedGeometry, exportedLink = null) {
+            const link = runtimeLinkId ? getCellById(runtimeLinkId) : null;
+            const vertices = Array.isArray(exportedGeometry?.vertices) ? exportedGeometry.vertices : [];
+
+            if (!link) {
+                return {
+                    runtimeId: runtimeLinkId ?? null,
+                    applied: false,
+                    reason: "runtime link not found",
+                    verticesCount: vertices.length
+                };
+            }
+
+            if (isSelfInvocationExportedLink(exportedLink) || isSelfInvocationRuntimeLink(link)) {
+                return {
+                    runtimeId: runtimeLinkId,
+                    applied: false,
+                    skipped: true,
+                    reason: "self-invocation geometry replay skipped",
+                    verticesCount: vertices.length,
+                    ctor: link?.constructor?.name ?? null,
+                    linkType: link?.logicalElement?.linkType ?? null
+                };
+            }
+
+            if (typeof link.vertices === "function") {
+                link.vertices(vertices);
+            } else {
+                link.set("vertices", vertices);
+            }
+            refreshLinksByIds([runtimeLinkId]);
+
             return {
-                skipped: true,
-                hasVertices: !!(exportedGeometry?.vertices?.length),
+                runtimeId: runtimeLinkId,
+                applied: true,
+                verticesCount: vertices.length,
                 hasLabels: !!(exportedGeometry?.labels?.length),
                 hasRawSource: !!exportedGeometry?.rawSource,
                 hasRawTarget: !!exportedGeometry?.rawTarget
+            };
+        }
+
+        async function applyTriangleGeometry(runtimeTriangleId, triangleGeometry, affectedLinkIds = []) {
+            const triangle = runtimeTriangleId ? getCellById(runtimeTriangleId) : null;
+            const p = triangleGeometry?.position;
+            if (!triangle) {
+                return {
+                    runtimeId: runtimeTriangleId ?? null,
+                    applied: false,
+                    reason: "runtime triangle not found"
+                };
+            }
+
+            if (p && typeof p.x === "number" && typeof p.y === "number") {
+                triangle.position(p.x, p.y);
+            }
+            refreshLinksByIds(affectedLinkIds);
+
+            return {
+                runtimeId: runtimeTriangleId,
+                applied: !!p,
+                position: p || null,
+                affectedLinkIds
             };
         }
 
@@ -2273,8 +2620,8 @@ Globals exposed:
             await cleanupSingleBoot();
         }
 
-        const oldIdToRuntimeModel = new Map();
-        const oldStateIdToRuntimeStateModel = new Map();
+        const oldIdToRuntimeRef = new Map();
+        const oldStateIdToRuntimeRef = new Map();
 
         const reports = {
             createdNodes: [],
@@ -2285,7 +2632,8 @@ Globals exposed:
             deferredGeometry: {
                 node: [],
                 state: [],
-                link: []
+                link: [],
+                triangle: []
             }
         };
 
@@ -2308,7 +2656,8 @@ Globals exposed:
                 throw new Error(`Unsupported node type: ${node.type}`);
             }
 
-            oldIdToRuntimeModel.set(node.id, model);
+            model = refreshModelRef(model) || model;
+            oldIdToRuntimeRef.set(node.id, buildNodeRefFromModel(model));
             reports.createdNodes.push({
                 exported: node,
                 runtime: summarizeModel(model)
@@ -2320,7 +2669,8 @@ Globals exposed:
         }
 
         for (const [oldParentId, exportedStates] of stateArraysOf(data)) {
-            const parentModel = oldIdToRuntimeModel.get(oldParentId);
+            const parentRef = oldIdToRuntimeRef.get(oldParentId);
+            const parentModel = resolveRuntimeRef(parentRef);
             if (!parentModel) {
                 throw new Error(`Parent model not found for states: ${oldParentId}`);
             }
@@ -2334,23 +2684,31 @@ Globals exposed:
                 preferDirectRemove: true
             });
 
-            const pairs = mapExportStateOrderToRuntime(parentModel, exportedStates);
+            const refreshedParent = refreshModelRef(parentModel) || parentModel;
+            const runtimeStates = getStatesByVisualOrder(refreshedParent);
+            if (runtimeStates.length !== exportedStates.length) {
+                throw new Error(
+                    `State count mismatch for ${getLabelFromModel(refreshedParent)}: runtime=${runtimeStates.length}, exported=${exportedStates.length}`
+                );
+            }
 
-            for (const pair of pairs) {
-                oldStateIdToRuntimeStateModel.set(pair.exported.id, pair.runtime);
+            for (let i = 0; i < exportedStates.length; i++) {
+                const exportedState = exportedStates[i];
+                const runtimeState = runtimeStates[i];
+                oldStateIdToRuntimeRef.set(exportedState.id, buildStateRef(refreshedParent, exportedState.label));
                 reports.createdStates.push({
-                    exported: pair.exported,
-                    runtime: summarizeModel(pair.runtime)
+                    exported: exportedState,
+                    runtime: summarizeModel(runtimeState)
                 });
 
                 reports.deferredGeometry.state.push(
-                    await applyStateGeometry(pair.runtime, pair.exported)
+                    await applyStateGeometry(runtimeState, exportedState)
                 );
             }
         }
 
         for (const node of data.nodes) {
-            const runtimeModel = oldIdToRuntimeModel.get(node.id);
+            const runtimeModel = resolveRuntimeRef(oldIdToRuntimeRef.get(node.id));
             if (!runtimeModel) continue;
 
             if (typeof node.essence === "number" && typeof node.affiliation === "number") {
@@ -2363,19 +2721,14 @@ Globals exposed:
         }
 
         for (const link of data.proceduralLinks || []) {
-            const source =
-                oldIdToRuntimeModel.get(link.sourceId) ||
-                oldStateIdToRuntimeStateModel.get(link.sourceId);
-
-            const target =
-                oldIdToRuntimeModel.get(link.targetId) ||
-                oldStateIdToRuntimeStateModel.get(link.targetId);
+            const source = resolveRuntimeRef(oldIdToRuntimeRef.get(link.sourceId) || oldStateIdToRuntimeRef.get(link.sourceId));
+            const target = resolveRuntimeRef(oldIdToRuntimeRef.get(link.targetId) || oldStateIdToRuntimeRef.get(link.targetId));
 
             if (!source || !target) {
                 throw new Error(`Missing procedural link endpoint(s) for link ${link.id}`);
             }
 
-            const { created, report } = await addLinkAio(
+            const {created, report} = await addLinkAio(
                 source,
                 target,
                 buildLinkParamsFromProceduralLink(link)
@@ -2385,16 +2738,10 @@ Globals exposed:
                 exported: link,
                 runtime: report
             });
-
-            reports.deferredGeometry.link.push(
-                await applyLinkGeometry(created, link.geometry)
-            );
         }
 
         for (const group of data.fundamentalGroups || []) {
-            const owner =
-                oldIdToRuntimeModel.get(group.ownerId) ||
-                oldStateIdToRuntimeStateModel.get(group.ownerId);
+            const owner = resolveRuntimeRef(oldIdToRuntimeRef.get(group.ownerId) || oldStateIdToRuntimeRef.get(group.ownerId));
 
             if (!owner) {
                 throw new Error(`Missing owner for fundamental group ${group.triangleId}`);
@@ -2402,13 +2749,13 @@ Globals exposed:
 
             const groupReport = {
                 group,
-                createdMembers: []
+                createdMembers: [],
+                runtimeTriangleId: null,
+                runtimeOwnerLinkId: null
             };
 
             for (const memberLink of group.memberLinks || []) {
-                const target =
-                    oldIdToRuntimeModel.get(memberLink.targetId) ||
-                    oldStateIdToRuntimeStateModel.get(memberLink.targetId);
+                const target = resolveRuntimeRef(oldIdToRuntimeRef.get(memberLink.targetId) || oldStateIdToRuntimeRef.get(memberLink.targetId));
 
                 if (!target) {
                     throw new Error(
@@ -2416,7 +2763,7 @@ Globals exposed:
                     );
                 }
 
-                const { created, report } = await addLinkAio(
+                const {created, report} = await addLinkAio(
                     owner,
                     target,
                     buildLinkParamsFromFundamentalMember(memberLink)
@@ -2424,15 +2771,57 @@ Globals exposed:
 
                 groupReport.createdMembers.push({
                     exported: memberLink,
-                    runtime: report
+                    runtime: report,
+                    runtimeLinkId: created?.id ?? null
                 });
+            }
 
+            const currentGroups = inspectCurrentFundamentalGroups();
+            const ownerId = getIdFromModel(refreshModelRef(owner) || owner);
+            const memberTargetIds = new Set((group.memberLinks || []).map(x => {
+                const runtimeTarget = resolveRuntimeRef(oldIdToRuntimeRef.get(x.targetId) || oldStateIdToRuntimeRef.get(x.targetId));
+                return runtimeTarget ? getIdFromModel(runtimeTarget) : null;
+            }).filter(Boolean));
+            const runtimeGroup = currentGroups.find(g => {
+                const ownerLink = g?.ownerLink?.toJSON?.() || {};
+                const currentOwnerId = ownerLink?.source?.id ?? null;
+                if (currentOwnerId !== ownerId) return false;
+                const currentTargets = new Set((g.memberLinks || []).map(l => l?.toJSON?.()?.target?.id).filter(Boolean));
+                if (currentTargets.size !== memberTargetIds.size) return false;
+                for (const runtimeTargetId of memberTargetIds) {
+                    if (!currentTargets.has(runtimeTargetId)) return false;
+                }
+                return true;
+            }) || null;
+
+            groupReport.runtimeTriangleId = runtimeGroup?.triangleId ?? null;
+            groupReport.runtimeOwnerLinkId = runtimeGroup?.ownerLinkId ?? null;
+            reports.fundamentalGroups.push(groupReport);
+        }
+
+        for (const link of reports.proceduralLinks) {
+            reports.deferredGeometry.link.push(
+                await applyLinkGeometry(link.runtime.created.id, link.exported.geometry, link.exported)
+            );
+        }
+
+        for (const groupReport of reports.fundamentalGroups) {
+            const affected = [groupReport.runtimeOwnerLinkId, ...groupReport.createdMembers.map(x => x.runtimeLinkId)].filter(Boolean);
+            reports.deferredGeometry.triangle.push(
+                await applyTriangleGeometry(groupReport.runtimeTriangleId, groupReport.group.triangleGeometry, affected)
+            );
+
+            if (groupReport.group.ownerLink?.geometry) {
                 reports.deferredGeometry.link.push(
-                    await applyLinkGeometry(created, memberLink.geometry)
+                    await applyLinkGeometry(groupReport.runtimeOwnerLinkId, groupReport.group.ownerLink.geometry, groupReport.group.ownerLink)
                 );
             }
 
-            reports.fundamentalGroups.push(groupReport);
+            for (const member of groupReport.createdMembers) {
+                reports.deferredGeometry.link.push(
+                    await applyLinkGeometry(member.runtimeLinkId, member.exported.geometry, member.exported)
+                );
+            }
         }
 
         const result = {
@@ -2444,8 +2833,8 @@ Globals exposed:
                 fundamentalGroups: reports.fundamentalGroups.length
             },
             idMaps: {
-                oldNodeIds: [...oldIdToRuntimeModel.keys()],
-                oldStateIds: [...oldStateIdToRuntimeStateModel.keys()]
+                oldNodeIds: [...oldIdToRuntimeRef.keys()],
+                oldStateIds: [...oldStateIdToRuntimeRef.keys()]
             },
             reports
         };
@@ -2474,6 +2863,37 @@ Globals exposed:
                 position: getPositionFromModel(model),
                 logicalLid: model?.getVisual?.()?.logicalElement?.lid ?? null
             };
+        }
+
+        function buildNodeRefFromModel(model) {
+            const refreshed = refreshModelRef(model) || model;
+            return {
+                kind: "node",
+                nodeType: getNodeType(refreshed),
+                label: getLabelFromModel(refreshed)
+            };
+        }
+
+        function buildStateRef(parentModelOrLabel, stateLabel) {
+            const parentLabel = typeof parentModelOrLabel === "string"
+                ? parentModelOrLabel
+                : getLabelFromModel(refreshModelRef(parentModelOrLabel) || parentModelOrLabel);
+            return {
+                kind: "state",
+                parentLabel,
+                label: stateLabel
+            };
+        }
+
+        function resolveRuntimeRef(ref) {
+            if (!ref) return null;
+            if (ref.kind === "node") {
+                return findCurrentNodeByTypeAndLabel(ref.nodeType, ref.label) || null;
+            }
+            if (ref.kind === "state") {
+                return findCurrentStateByParentLabelAndLabel(ref.parentLabel, ref.label) || null;
+            }
+            return null;
         }
 
         function findOpdEntryById(opdId) {
@@ -2507,7 +2927,11 @@ Globals exposed:
         }
 
         function safeFindCurrentByLabel(label) {
-            try { return findAnyModelByLabel(label); } catch { return null; }
+            try {
+                return findAnyModelByLabel(label);
+            } catch {
+                return null;
+            }
         }
 
         const runtimeOpdIdByExportedOpdId = new Map();
@@ -2562,6 +2986,7 @@ Globals exposed:
                 throw new Error(`Unsupported node type: ${node?.type}`);
             }
 
+            model = refreshModelRef(model) || model;
             if (typeof node?.essence === "number" && typeof node?.affiliation === "number") {
                 try {
                     await setEssenceAio(model, {
@@ -2569,30 +2994,57 @@ Globals exposed:
                         affiliation: node.affiliation
                     });
                 } catch (e) {
-                    log("importEntireOpdTree.setEssence.failed", { label: node.label, error: String(e) });
+                    log("importEntireOpdTree.setEssence.failed", {label: node.label, error: String(e)});
                 }
             }
 
-            return model;
+            return refreshModelRef(model) || model;
         }
 
-        async function ensureStatesForEntry(entry, exportedNodeId, runtimeParentModel) {
+        async function ensureStatesForEntry(entry, exportedNodeId, runtimeParentRef) {
             const states = getStatesArray(entry, exportedNodeId);
-            if (!states.length) return [];
+            if (!states.length) {
+                return {
+                    exportedStates: [],
+                    runtimeStateRefsByExportedId: new Map()
+                };
+            }
+
+            const parentModel = resolveRuntimeRef(runtimeParentRef);
+            if (!parentModel) {
+                throw new Error(`Could not resolve runtime parent while normalizing states: ${exportedNodeId}`);
+            }
 
             const labels = states.map(s => s.label);
-            await updateStatesAio(runtimeParentModel, labels, {
+            await updateStatesAio(parentModel, labels, {
                 removeType: 1,
                 deleteDelayMs: 0,
                 preferDirectRemove: true
             });
 
-            return getStatesByVisualOrder(runtimeParentModel);
+            const refreshedParent = refreshModelRef(parentModel) || parentModel;
+            const runtimeStates = getStatesByVisualOrder(refreshedParent);
+            if (runtimeStates.length !== states.length) {
+                throw new Error(
+                    `State count mismatch for ${getLabelFromModel(refreshedParent)}: runtime=${runtimeStates.length}, exported=${states.length}`
+                );
+            }
+
+            const runtimeStateRefsByExportedId = new Map();
+            for (let i = 0; i < states.length; i++) {
+                runtimeStateRefsByExportedId.set(states[i].id, buildStateRef(refreshedParent, states[i].label));
+            }
+
+            return {
+                exportedStates: states,
+                runtimeStateRefsByExportedId
+            };
         }
 
         async function ensureLocalNodes(entry) {
             const exportedNodes = entry?.local?.nodes || [];
-            const runtimeByExportedId = new Map();
+            const runtimeRefsByExportedId = new Map();
+            const runtimeStateRefsByExportedId = new Map();
 
             for (const node of exportedNodes) {
                 let model = safeFindCurrentByLabel(node.label);
@@ -2606,30 +3058,48 @@ Globals exposed:
                     });
                 }
 
-                runtimeByExportedId.set(node.id, model);
+                model = refreshModelRef(model) || model;
+                runtimeRefsByExportedId.set(node.id, buildNodeRefFromModel(model));
             }
 
             for (const node of exportedNodes) {
-                const runtime = runtimeByExportedId.get(node.id);
+                let runtime = resolveRuntimeRef(runtimeRefsByExportedId.get(node.id));
                 if (!runtime) continue;
 
                 const currentLabel = getLabelFromModel(runtime);
                 if (currentLabel !== node.label) {
-                    await renameNodeAio(runtime, node.label, { onExisting: "useExisting" });
+                    await renameNodeAio(runtime, node.label, {onExisting: "useExisting"});
+                    runtime = findCurrentNodeByTypeAndLabel(node.type, node.label) || refreshModelRef(runtime) || runtime;
                 }
 
                 if (node?.position && typeof node.position.x === "number" && typeof node.position.y === "number") {
-                    try { runtime.position(node.position.x, node.position.y); } catch {}
+                    try {
+                        runtime.position(node.position.x, node.position.y);
+                    } catch {
+                    }
                 }
+
+                runtime = refreshModelRef(runtime) || runtime;
+                runtimeRefsByExportedId.set(node.id, buildNodeRefFromModel(runtime));
             }
 
             for (const node of exportedNodes) {
-                const runtime = runtimeByExportedId.get(node.id);
-                if (!runtime) continue;
-                await ensureStatesForEntry(entry, node.id, runtime);
+                const runtimeRef = runtimeRefsByExportedId.get(node.id);
+                if (!runtimeRef) continue;
+                const stateInfo = await ensureStatesForEntry(entry, node.id, runtimeRef);
+                for (const [exportedStateId, runtimeStateRef] of stateInfo.runtimeStateRefsByExportedId.entries()) {
+                    runtimeStateRefsByExportedId.set(exportedStateId, runtimeStateRef);
+                }
+                const refreshedRuntime = resolveRuntimeRef(runtimeRef);
+                if (refreshedRuntime) {
+                    runtimeRefsByExportedId.set(node.id, buildNodeRefFromModel(refreshedRuntime));
+                }
             }
 
-            return runtimeByExportedId;
+            return {
+                runtimeRefsByExportedId,
+                runtimeStateRefsByExportedId
+            };
         }
 
         function buildProceduralLinkParams(link) {
@@ -2652,38 +3122,89 @@ Globals exposed:
             };
         }
 
-        async function rebuildLinks(entry, runtimeByExportedId) {
+        async function rebuildLinks(entry, runtimeRefsByExportedId, runtimeStateRefsByExportedId) {
             const made = {
                 procedural: [],
-                fundamental: []
+                fundamental: [],
+                fundamentalGroups: []
+            };
+
+            const resolveEndpoint = (exportedId) => {
+                return resolveRuntimeRef(runtimeRefsByExportedId.get(exportedId)) ||
+                    resolveRuntimeRef(runtimeStateRefsByExportedId.get(exportedId)) ||
+                    null;
             };
 
             for (const link of entry?.local?.proceduralLinks || []) {
-                const src = runtimeByExportedId.get(link.sourceId);
-                const tgt = runtimeByExportedId.get(link.targetId);
+                const src = resolveEndpoint(link.sourceId);
+                const tgt = resolveEndpoint(link.targetId);
                 if (!src || !tgt) {
-                    log("importEntireOpdTree.procedural.skipMissingEndpoint", { link });
+                    log("importEntireOpdTree.procedural.skipMissingEndpoint", {
+                        link,
+                        srcFound: !!src,
+                        tgtFound: !!tgt,
+                        sourceId: link.sourceId,
+                        targetId: link.targetId
+                    });
                     continue;
                 }
                 const rep = await addLinkAio(src, tgt, buildProceduralLinkParams(link));
-                made.procedural.push(rep.report);
+                made.procedural.push({
+                    exported: link,
+                    runtimeLinkId: rep.created?.id ?? null,
+                    report: rep.report
+                });
             }
 
             for (const group of entry?.local?.fundamentalGroups || []) {
-                const owner = runtimeByExportedId.get(group.ownerId);
+                const owner = resolveEndpoint(group.ownerId);
                 if (!owner) {
-                    log("importEntireOpdTree.fundamental.skipMissingOwner", { group });
+                    log("importEntireOpdTree.fundamental.skipMissingOwner", {group});
                     continue;
                 }
+
+                const createdMembers = [];
                 for (const memberLink of group.memberLinks || []) {
-                    const tgt = runtimeByExportedId.get(memberLink.targetId);
+                    const tgt = resolveEndpoint(memberLink.targetId);
                     if (!tgt) {
-                        log("importEntireOpdTree.fundamental.skipMissingTarget", { memberLink });
+                        log("importEntireOpdTree.fundamental.skipMissingTarget", {memberLink});
                         continue;
                     }
                     const rep = await addLinkAio(owner, tgt, buildFundamentalLinkParams(memberLink));
+                    createdMembers.push({
+                        exported: memberLink,
+                        runtimeLinkId: rep.created?.id ?? null,
+                        report: rep.report
+                    });
                     made.fundamental.push(rep.report);
                 }
+
+                const ownerId = getIdFromModel(refreshModelRef(owner) || owner);
+                const expectedRuntimeTargets = new Set(
+                    (group.memberLinks || [])
+                        .map(x => resolveEndpoint(x.targetId))
+                        .filter(Boolean)
+                        .map(t => getIdFromModel(refreshModelRef(t) || t))
+                );
+                const currentGroups = inspectCurrentFundamentalGroups();
+                const runtimeGroup = currentGroups.find(g => {
+                    const ownerLink = g?.ownerLink?.toJSON?.() || {};
+                    const currentOwnerId = ownerLink?.source?.id ?? null;
+                    if (currentOwnerId !== ownerId) return false;
+                    const currentTargets = new Set((g.memberLinks || []).map(l => l?.toJSON?.()?.target?.id).filter(Boolean));
+                    if (currentTargets.size !== expectedRuntimeTargets.size) return false;
+                    for (const id of expectedRuntimeTargets) {
+                        if (!currentTargets.has(id)) return false;
+                    }
+                    return true;
+                }) || null;
+
+                made.fundamentalGroups.push({
+                    exported: group,
+                    runtimeTriangleId: runtimeGroup?.triangleId ?? null,
+                    runtimeOwnerLinkId: runtimeGroup?.ownerLinkId ?? null,
+                    createdMembers
+                });
             }
 
             return made;
@@ -2766,23 +3287,124 @@ Globals exposed:
                 runtimeCurrentOpd: summarizeOpd(getCurrentOpd())
             });
 
-            const runtimeByExportedId = await ensureLocalNodes(entry);
-            const links = await rebuildLinks(entry, runtimeByExportedId);
+            const init = BOOT.capturedUiSeed.init;
+            const getCellById = (id) => getCurrentGraphCells().find(c => getIdFromModel(c) === id) || null;
+            const refreshLinksByIds = (linkIds) => {
+                const links = linkIds.map(id => getCellById(id)).filter(Boolean);
+                try {
+                    init?.graphService?.updateLinksView?.(links);
+                } catch {
+                }
+                return links;
+            };
+            const isSelfInvocationExportedLink = (link) => {
+                if (!link) return false;
+                if (link.linkType === 5) return true;
+                const ctor = String(link.ctor || "");
+                return /SelfInvocation/i.test(ctor);
+            };
+
+            const isSelfInvocationRuntimeLink = (link) => {
+                if (!link) return false;
+                const ctor = String(link?.constructor?.name || "");
+                const logicalType = link?.logicalElement?.linkType ?? null;
+                const j = link?.toJSON?.() || {};
+                const sid = j?.source?.id ?? null;
+                const tid = j?.target?.id ?? null;
+                return logicalType === 5 || /SelfInvocation/i.test(ctor) || (!!sid && sid === tid);
+            };
+
+            const applyLinkGeometry = (runtimeLinkId, geometry, exportedLink = null) => {
+                const link = runtimeLinkId ? getCellById(runtimeLinkId) : null;
+                const vertices = Array.isArray(geometry?.vertices) ? geometry.vertices : [];
+                if (!link) {
+                    return {
+                        runtimeId: runtimeLinkId ?? null,
+                        applied: false,
+                        verticesCount: vertices.length,
+                        reason: "runtime link not found"
+                    };
+                }
+
+                if (isSelfInvocationExportedLink(exportedLink) || isSelfInvocationRuntimeLink(link)) {
+                    return {
+                        runtimeId: runtimeLinkId,
+                        applied: false,
+                        skipped: true,
+                        reason: "self-invocation geometry replay skipped",
+                        verticesCount: vertices.length,
+                        ctor: link?.constructor?.name ?? null,
+                        linkType: link?.logicalElement?.linkType ?? null
+                    };
+                }
+
+                if (typeof link.vertices === "function") {
+                    link.vertices(vertices);
+                } else {
+                    link.set("vertices", vertices);
+                }
+                refreshLinksByIds([runtimeLinkId]);
+                return {runtimeId: runtimeLinkId, applied: true, verticesCount: vertices.length};
+            };
+            const applyTriangleGeometry = (runtimeTriangleId, triangleGeometry, affectedLinkIds = []) => {
+                const triangle = runtimeTriangleId ? getCellById(runtimeTriangleId) : null;
+                const p = triangleGeometry?.position;
+                if (!triangle) return {runtimeId: runtimeTriangleId ?? null, applied: false};
+                if (p && typeof p.x === "number" && typeof p.y === "number") {
+                    triangle.position(p.x, p.y);
+                }
+                refreshLinksByIds(affectedLinkIds);
+                return {runtimeId: runtimeTriangleId, applied: !!p, position: p || null};
+            };
+
+            const {runtimeRefsByExportedId, runtimeStateRefsByExportedId} = await ensureLocalNodes(entry);
+            const links = await rebuildLinks(entry, runtimeRefsByExportedId, runtimeStateRefsByExportedId);
+
+            const geometryReplay = {
+                procedural: [],
+                fundamental: [],
+                triangles: []
+            };
+
+            for (const link of links.procedural) {
+                geometryReplay.procedural.push(
+                    applyLinkGeometry(link.runtimeLinkId, link.exported.geometry, link.exported)
+                );
+            }
+
+            for (const group of links.fundamentalGroups || []) {
+                const affected = [group.runtimeOwnerLinkId, ...group.createdMembers.map(x => x.runtimeLinkId)].filter(Boolean);
+                geometryReplay.triangles.push(
+                    applyTriangleGeometry(group.runtimeTriangleId, group.exported.triangleGeometry, affected)
+                );
+                if (group.exported.ownerLink?.geometry) {
+                    geometryReplay.fundamental.push(
+                        applyLinkGeometry(group.runtimeOwnerLinkId, group.exported.ownerLink.geometry, group.exported.ownerLink)
+                    );
+                }
+                for (const member of group.createdMembers) {
+                    geometryReplay.fundamental.push(
+                        applyLinkGeometry(member.runtimeLinkId, member.exported.geometry, member.exported)
+                    );
+                }
+            }
 
             const report = {
                 opdName,
                 exportedOpdId: entry?.hierarchy?.opdId,
                 runtimeCurrentOpd: summarizeOpd(getCurrentOpd()),
-                createdOrMatched: [...runtimeByExportedId.entries()].map(([oldId, model]) => ({
+                createdOrMatched: [...runtimeRefsByExportedId.entries()].map(([oldId, ref]) => ({
                     oldId,
-                    runtime: summarizeModel(model)
+                    runtime: summarizeModel(resolveRuntimeRef(ref))
                 })),
-                links
+                links,
+                geometryReplay
             };
 
             log("importEntireOpdTree.rebuildSingleOpdEntry.done", report);
             return {
-                runtimeByExportedId,
+                runtimeRefsByExportedId,
+                runtimeStateRefsByExportedId,
                 report
             };
         }
@@ -2857,7 +3479,7 @@ Globals exposed:
        Cleanup helpers
     ------------------------------*/
 
-    function createNodeFromCtor(Ctor, { label, x, y } = {}) {
+    function createNodeFromCtor(Ctor, {label, x, y} = {}) {
         if (!Ctor) throw new Error("Ctor is required");
 
         const graph =
@@ -2925,7 +3547,10 @@ Globals exposed:
             }
 
             bootObjectTempLabel = makeInitTempLabel("object");
-            try { await renameNodeAio(created.object, bootObjectTempLabel); } catch {}
+            try {
+                await renameNodeAio(created.object, bootObjectTempLabel);
+            } catch {
+            }
 
             await captureUiSeedFromObject(created.object);
             BOOT.bootConstructors.object = created.object.constructor || BOOT.bootConstructors.object;
@@ -2937,7 +3562,10 @@ Globals exposed:
             }
 
             bootProcessTempLabel = makeInitTempLabel("process");
-            try { await renameNodeAio(created.process, bootProcessTempLabel); } catch {}
+            try {
+                await renameNodeAio(created.process, bootProcessTempLabel);
+            } catch {
+            }
 
             BOOT.bootConstructors.process = created.process.constructor || BOOT.bootConstructors.process;
             BOOT.cachedGraph = created.process.graph || created.process.collection?.graph || created.process.collection || BOOT.cachedGraph;
@@ -2952,7 +3580,10 @@ Globals exposed:
                 bootProcessTempLabel
             });
         } finally {
-            try { await cleanupSingleBoot(); } catch {}
+            try {
+                await cleanupSingleBoot();
+            } catch {
+            }
             BOOT.created.object = null;
             BOOT.created.process = null;
         }
@@ -2977,13 +3608,13 @@ Globals exposed:
         };
     }
 
-    async function addObjectAio({ label, x, y } = {}) {
+    async function addObjectAio({label, x, y} = {}) {
         await bootstrapRuntimeOnce();
 
         const Ctor = BOOT.bootConstructors.object;
         if (!Ctor) throw new Error("No bootstrapped object constructor available");
 
-        const obj = createNodeFromCtor(Ctor, { x, y });
+        const obj = createNodeFromCtor(Ctor, {x, y});
         if (label) {
             await renameNodeAio(obj, label);
         }
@@ -2997,13 +3628,13 @@ Globals exposed:
         return obj;
     }
 
-    async function addProcessAio({ label, x, y } = {}) {
+    async function addProcessAio({label, x, y} = {}) {
         await bootstrapRuntimeOnce();
 
         const Ctor = BOOT.bootConstructors.process;
         if (!Ctor) throw new Error("No bootstrapped process constructor available");
 
-        const proc = createNodeFromCtor(Ctor, { x, y });
+        const proc = createNodeFromCtor(Ctor, {x, y});
         if (label) {
             await renameNodeAio(proc, label);
         }
@@ -3029,9 +3660,9 @@ Globals exposed:
 
             try {
                 const id = model.get?.("id");
-                const rep = await deleteNodeAio(model, { allowRawFallback: false });
+                const rep = await deleteNodeAio(model, {allowRawFallback: false});
                 if (!rep.stillOnCanvas) {
-                    removed.push({ kind: k, id, via: "deleteNodeAio" });
+                    removed.push({kind: k, id, via: "deleteNodeAio"});
                 }
             } catch (e) {
                 console.warn(`Failed to cleanup ${k}`, e);
@@ -3040,11 +3671,19 @@ Globals exposed:
             BOOT.created[k] = null;
         }
 
-        log("cleanupSingleBoot", { removed });
+        log("cleanupSingleBoot", {removed});
         return removed;
     }
 
     window.__opcloudSingleBoot = {
+        getOpdById,
+        getOpdPathById,
+        getCurrentOpdPath,
+        findOpdByNamePath,
+        findCurrentNodeByTypeAndLabel,
+        findCurrentStateByParentLabelAndLabel,
+        getRuntimeNodeNameKey,
+        resolveNameFriendlyEndpoint,
         BOOT,
         getMainSvg,
         getHiddenJqData,
@@ -3091,6 +3730,8 @@ Globals exposed:
         inspectCurrentFundamentalGroups,
         cleanupAllExistingLinksAio,
         navigateToOpdAio,
+        navigateToOpdByNamePathAio,
+        setCurrentOpdWithoutRenderAio,
         installUnfoldProbeOnTarget,
         removeUnfoldProbeFromTarget,
         mapKindToType,
@@ -3157,10 +3798,12 @@ Globals exposed:
     window.inspectCurrentFundamentalGroups = inspectCurrentFundamentalGroups;
     window.cleanupAllExistingLinksAio = cleanupAllExistingLinksAio;
     window.navigateToOpdAio = navigateToOpdAio;
+    window.navigateToOpdByNamePathAio = navigateToOpdByNamePathAio;
+    window.setCurrentOpdWithoutRenderAio = setCurrentOpdWithoutRenderAio;
     window.installUnfoldProbeOnTarget = installUnfoldProbeOnTarget;
     window.removeUnfoldProbeFromTarget = removeUnfoldProbeFromTarget;
     window.importEntireOpdTreeAio = importEntireOpdTreeAio;
-
+    await bootstrapRuntimeOnce()
     console.log("OPCloud single-boot toolkit loaded");
 })();
 
