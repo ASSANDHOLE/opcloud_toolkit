@@ -1,0 +1,39 @@
+{
+  "manifest_version": 3,
+  "name": "OPCloud Toolkit",
+  "version": "0.1.0",
+  "description": "Bootstrap, export, and import OPCloud diagrams from a popup.",
+  "action": {
+    "default_title": "OPCloud Toolkit",
+    "default_popup": "popup.html"
+  },
+  "permissions": [
+    "downloads",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://opcloud-sandbox.web.app/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://opcloud-sandbox.web.app/*"
+      ],
+      "js": [
+        "content-script.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "toolkit.js",
+        "page-bridge.js"
+      ],
+      "matches": [
+        "https://opcloud-sandbox.web.app/*"
+      ]
+    }
+  ]
+}

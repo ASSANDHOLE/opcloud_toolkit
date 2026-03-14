@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>OPCloud Toolkit</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+<main class="app">
+    <header class="hero">
+        <div class="hero-top">
+            <h1>OPCloud Toolkit</h1>
+            <div id="busyIndicator" class="busy-indicator hidden" aria-live="polite">
+                <span class="spinner" aria-hidden="true"></span>
+                <span id="busyText">Working...</span>
+            </div>
+        </div>
+        <p>Bootstrap once, then export or import your OPCloud tree.</p>
+    </header>
+
+    <section class="panel">
+        <div class="panel-head">
+            <h2>Status & Bootstrap</h2>
+            <button id="refreshStatusButton" class="ghost" type="button">Refresh</button>
+        </div>
+        <div id="statusBadge" class="badge">Checking page...</div>
+        <p id="statusText" class="muted">Open an OPCloud tab, then refresh.</p>
+        <button id="bootstrapButton" type="button">Initialize Toolkit</button>
+        <p class="muted">Required once per tab before import/export actions are enabled.</p>
+    </section>
+
+    <section class="panel">
+        <div class="panel-head">
+            <h2>Guide</h2>
+        </div>
+        <details class="guide-block">
+            <summary>Read Me</summary>
+            <p>
+                This extension injects a toolkit into OPCloud Sandbox so you can bootstrap runtime access,
+                export the current OPD tree to JSON, and import a previously exported tree back into the page.
+            </p>
+            <p>
+                OPCloud itself remains the real editor and renderer. The toolkit tries to work through OPCloud's
+                runtime model instead of redrawing diagrams separately.
+            </p>
+            <p>
+                Project page:
+                <a href="https://github.com/ASSANDHOLE/opcloud_toolkit" target="_blank" rel="noreferrer">
+                    github.com/ASSANDHOLE/opcloud_toolkit
+                </a>
+            </p>
+            <p class="guide-subtitle">Basic Workflow</p>
+            <ol class="guide-list">
+                <li>Open <code>https://opcloud-sandbox.web.app/</code>.</li>
+                <li>Click <strong>Initialize Toolkit</strong> once for the current tab.</li>
+                <li>Use <strong>Download JSON</strong> or <strong>Copy JSON</strong> to export.</li>
+                <li>Use <strong>Choose JSON File</strong> or paste JSON to import.</li>
+            </ol>
+            <p class="guide-subtitle">Limitations</p>
+            <ul class="guide-list">
+                <li><code>OvertimeException</code> links are not tested.</li>
+                <li>No max-duration handling is currently defined or enforced.</li>
+                <li>Fonts are not explicitly handled during export/import fidelity.</li>
+                <li>In-diagram in-zoom navigation/UI behavior is not implemented as a popup feature.</li>
+                <li>Some advanced or fancy OPCloud functions are not covered by this toolkit yet.</li>
+                <li>Link geometry and state positions can still be imperfect after reconstruction.</li>
+            </ul>
+            <p class="guide-subtitle">Possible Breakage</p>
+            <ul class="guide-list">
+                <li>This toolkit depends on OPCloud Sandbox runtime internals and reverse-engineered behavior.</li>
+                <li>Upstream OPCloud updates may break bootstrap, import/export, or geometry reconstruction.</li>
+                <li>If something suddenly stops working, first reload the extension and refresh the OPCloud page.</li>
+            </ul>
+            <p class="guide-subtitle">Practical Advice</p>
+            <ul class="guide-list">
+                <li>Keep backups of important JSON exports.</li>
+                <li>Test imports on a disposable page first when trying a new diagram shape or feature.</li>
+                <li>If an import looks wrong, export again and compare the structure before editing further.</li>
+            </ul>
+        </details>
+    </section>
+
+    <section class="panel">
+        <div class="panel-head">
+            <h2>Export</h2>
+        </div>
+        <div class="button-row">
+            <button id="downloadExportButton" type="button" disabled>Download JSON</button>
+            <button id="copyExportButton" class="ghost" type="button" disabled>Copy JSON</button>
+        </div>
+        <p class="muted">Exports the full OPD tree. The popup does not display the full JSON.</p>
+    </section>
+
+    <section class="panel">
+        <div class="panel-head">
+            <h2>Import</h2>
+        </div>
+        <label class="file-input">
+            <span>Choose JSON File</span>
+            <input id="fileInput" type="file" accept=".json,application/json" disabled>
+        </label>
+        <div class="button-row">
+            <button id="importFileButton" type="button" disabled>Import File</button>
+            <button id="clearTextButton" class="ghost" type="button">Clear Text</button>
+        </div>
+        <label class="textarea-label" for="jsonInput">Or paste JSON</label>
+        <textarea id="jsonInput" rows="8" placeholder="Paste exported JSON here..." spellcheck="false"></textarea>
+        <button id="importTextButton" type="button" disabled>Import Pasted JSON</button>
+    </section>
+
+    <section class="panel">
+        <div class="panel-head">
+            <h2>Activity</h2>
+        </div>
+        <pre id="activityLog" class="log">Ready.</pre>
+    </section>
+
+</main>
+<script src="popup.js"></script>
+</body>
+</html>

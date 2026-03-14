@@ -1,0 +1,264 @@
+:root {
+    color-scheme: light;
+    --bg: #f7f2e8;
+    --panel: #fffaf2;
+    --panel-border: #d7c9af;
+    --text: #2a241d;
+    --muted: #6d6255;
+    --accent: #2b6f5b;
+    --accent-strong: #1f5646;
+    --accent-soft: #e0efe9;
+    --danger-soft: #f8e4de;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background:
+        radial-gradient(circle at top left, #fff8e8 0, transparent 42%),
+        linear-gradient(180deg, #efe4ce 0%, var(--bg) 45%, #f4efe5 100%);
+    color: var(--text);
+    font: 13px/1.4 "Segoe UI", Tahoma, sans-serif;
+}
+
+.app {
+    width: 380px;
+    padding: 14px;
+}
+
+.hero {
+    margin-bottom: 12px;
+}
+
+.hero-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.hero h1 {
+    margin: 0 0 4px;
+    font-size: 20px;
+}
+
+.hero p,
+.muted {
+    margin: 0;
+    color: var(--muted);
+}
+
+.panel {
+    margin-bottom: 12px;
+    padding: 12px;
+    border: 1px solid var(--panel-border);
+    border-radius: 14px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), var(--panel));
+    box-shadow: 0 6px 18px rgba(74, 56, 29, 0.08);
+}
+
+.panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.panel h2 {
+    margin: 0;
+    font-size: 14px;
+}
+
+.badge {
+    display: inline-block;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.badge.warn {
+    background: #f6eac4;
+    color: #7b5a00;
+}
+
+.badge.error {
+    background: var(--danger-soft);
+    color: #8b3b24;
+}
+
+.busy-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: #efe7d8;
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.busy-indicator.hidden {
+    visibility: hidden;
+}
+
+.spinner {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid #d3e3dc;
+    border-top-color: var(--accent);
+    animation: popupSpin 0.9s linear infinite;
+}
+
+@keyframes popupSpin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.button-row {
+    display: flex;
+    gap: 8px;
+    margin: 8px 0;
+}
+
+button,
+.file-input span {
+    appearance: none;
+    border: 0;
+    border-radius: 10px;
+    padding: 10px 12px;
+    background: var(--accent);
+    color: #fff;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 600;
+    transition: transform 120ms ease, opacity 120ms ease, background 120ms ease;
+}
+
+button:hover,
+.file-input span:hover {
+    background: var(--accent-strong);
+}
+
+button:disabled,
+.file-input input:disabled + span,
+.file-input.disabled span {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+button:active,
+.file-input span:active {
+    transform: translateY(1px);
+}
+
+button.ghost {
+    background: #e8dfcf;
+    color: var(--text);
+}
+
+.file-input {
+    display: inline-block;
+    margin-top: 4px;
+}
+
+.file-input input {
+    display: none;
+}
+
+.textarea-label {
+    display: block;
+    margin: 8px 0 4px;
+    font-weight: 600;
+}
+
+textarea,
+.log {
+    width: 100%;
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.8);
+    color: var(--text);
+    font: 12px/1.45 Consolas, "Courier New", monospace;
+}
+
+textarea {
+    resize: vertical;
+    min-height: 120px;
+}
+
+.log {
+    min-height: 90px;
+    white-space: pre-wrap;
+    margin: 0;
+}
+
+.guide-block {
+    border-top: 1px solid rgba(109, 98, 85, 0.18);
+    padding-top: 8px;
+    margin-top: 8px;
+}
+
+.guide-block:first-of-type {
+    border-top: 0;
+    padding-top: 0;
+    margin-top: 0;
+}
+
+.guide-block summary {
+    cursor: pointer;
+    font-weight: 700;
+    list-style: none;
+}
+
+.guide-block summary::-webkit-details-marker {
+    display: none;
+}
+
+.guide-block summary::before {
+    content: "+";
+    display: inline-block;
+    width: 14px;
+    color: var(--accent);
+    font-weight: 700;
+}
+
+.guide-block[open] summary::before {
+    content: "-";
+}
+
+.guide-block p {
+    margin: 8px 0 0;
+    color: var(--muted);
+}
+
+.guide-block a {
+    color: var(--accent-strong);
+}
+
+.guide-subtitle {
+    font-weight: 700;
+    color: var(--text);
+}
+
+.guide-list {
+    margin: 8px 0 0 18px;
+    padding: 0;
+    color: var(--muted);
+}
+
+.guide-list li {
+    margin: 4px 0;
+}
