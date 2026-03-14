@@ -147,6 +147,136 @@ Globals exposed:
         });
     }
 
+    function getEmbeddedThingChildren(model, {deep = true} = {}) {
+        const cells = model?.getEmbeddedCells?.(deep ? {deep: true} : undefined) || [];
+        return cells.filter(c => {
+            const t = getNodeType(c);
+            return t === "opm.Object" || t === "opm.Process" || t === "opm.State";
+        });
+    }
+
+    function moveAndKeepChildrenPositionByPosition(model, newX, newY) {
+        if (!model) throw new Error("model is required");
+
+        const oldPos = model.get?.("position");
+        const thisSize = model.get?.("size");
+        if (!oldPos || !thisSize) {
+            throw new Error("model has no valid position/size");
+        }
+
+        model.position(newX, newY, {});
+        const thisPos = {x: newX, y: newY};
+
+        for (const cell of getEmbeddedThingChildren(model, {deep: true})) {
+            const cellPos = cell.get?.("position");
+            const cellSize = cell.get?.("size");
+            if (!cellPos || !cellSize) continue;
+
+            const relativeX = (cellPos.x - oldPos.x + cellSize.width / 2) / thisSize.width;
+            const relativeY = (cellPos.y - oldPos.y + cellSize.height / 2) / thisSize.height;
+            const newXPos = relativeX * thisSize.width + thisPos.x - cellSize.width / 2;
+            const newYPos = relativeY * thisSize.height + thisPos.y - cellSize.height / 2;
+            cell.position(newXPos, newYPos, {});
+        }
+
+        return {
+            id: getIdFromModel(model),
+            label: getLabelFromModel(model),
+            position: getPositionFromModel(model),
+            childCount: getEmbeddedThingChildren(model, {deep: true}).length
+        };
+    }
+
+    function fitObjectToEmbeddedStatesWithDefaults(
+        obj,
+        {
+            padLeft = 10,
+            padRight = 10,
+            padTop = 40,
+            padBottom = 10,
+            eps = 2
+        } = {}
+    ) {
+        if (!obj) throw new Error("obj is required");
+
+        const states = getStateChildren(obj);
+        if (!states.length) {
+            return {
+                changed: false,
+                reason: "no embedded states"
+            };
+        }
+
+        const objPos = obj.get?.("position");
+        const objSize = obj.get?.("size");
+        if (!objPos || !objSize) {
+            throw new Error("object has no valid position/size");
+        }
+
+        let minLeft = Infinity;
+        let minTop = Infinity;
+        let maxRight = -Infinity;
+        let maxBottom = -Infinity;
+
+        for (const st of states) {
+            const stPos = st.get?.("position");
+            const stSize = st.get?.("size");
+            if (!stPos || !stSize) continue;
+
+            const left = stPos.x;
+            const top = stPos.y;
+            const right = stPos.x + stSize.width;
+            const bottom = stPos.y + stSize.height;
+
+            if (left < minLeft) minLeft = left;
+            if (top < minTop) minTop = top;
+            if (right > maxRight) maxRight = right;
+            if (bottom > maxBottom) maxBottom = bottom;
+        }
+
+        if (!isFinite(minLeft) || !isFinite(minTop) || !isFinite(maxRight) || !isFinite(maxBottom)) {
+            return {
+                changed: false,
+                reason: "could not derive state bounds"
+            };
+        }
+
+        const desiredX = minLeft - padLeft;
+        const desiredY = minTop - padTop;
+        const desiredWidth = (maxRight + padRight) - desiredX;
+        const desiredHeight = (maxBottom + padBottom) - desiredY;
+
+        const oldX = objPos.x;
+        const oldY = objPos.y;
+        const oldWidth = objSize.width;
+        const oldHeight = objSize.height;
+
+        const closeEnough =
+            Math.abs(desiredX - oldX) <= eps &&
+            Math.abs(desiredY - oldY) <= eps &&
+            Math.abs(desiredWidth - oldWidth) <= eps &&
+            Math.abs(desiredHeight - oldHeight) <= eps;
+
+        if (closeEnough) {
+            return {
+                changed: false,
+                reason: "within tolerance",
+                old: {x: oldX, y: oldY, width: oldWidth, height: oldHeight},
+                desired: {x: desiredX, y: desiredY, width: desiredWidth, height: desiredHeight}
+            };
+        }
+
+        moveAndKeepChildrenPositionByPosition(obj, desiredX, desiredY);
+        obj.resize(desiredWidth, desiredHeight, {});
+
+        return {
+            changed: true,
+            old: {x: oldX, y: oldY, width: oldWidth, height: oldHeight},
+            next: {x: desiredX, y: desiredY, width: desiredWidth, height: desiredHeight},
+            stateCount: states.length
+        };
+    }
+
     function getStatesByVisualOrder(model) {
         return getStateChildren(model)
             .slice()
@@ -1401,6 +1531,64 @@ Globals exposed:
         return {created, report};
     }
 
+    async function inzoomTargetAio(target, {delayMs = 80} = {}) {
+        await ensureUiSeedCaptured();
+
+        const init = BOOT?.capturedUiSeed?.init;
+        if (!looksLikeInitRappidService(init)) {
+            throw new Error("No valid captured InitRappidService available");
+        }
+
+        const model0 = typeof target === "string" ? findAnyModelByLabel(target) : (refreshModelRef(target) || target);
+        if (!model0) throw new Error(`Could not resolve target: ${target}`);
+
+        const type0 = getNodeType(model0);
+        if (type0 !== "opm.Object" && type0 !== "opm.Process") {
+            throw new Error(`Target must be opm.Object or opm.Process, got ${type0}`);
+        }
+
+        const targetId = getIdFromModel(model0);
+        if (!targetId) throw new Error("Resolved target has no ID");
+
+        const cell = init?.graph?.getCell?.(targetId);
+        if (!cell) throw new Error(`init.graph.getCell(${targetId}) returned null`);
+        if (typeof cell.inzoomAction !== "function") {
+            throw new Error("Target cell does not expose inzoomAction(init)");
+        }
+
+        const before = {
+            id: getIdFromModel(model0),
+            type: getNodeType(model0),
+            label: getLabelFromModel(model0),
+            logicalLid: model0?.getVisual?.()?.logicalElement?.lid ?? null,
+            embeds: model0?.toJSON?.()?.embeds || []
+        };
+
+        cell.inzoomAction(init);
+        if (delayMs > 0) {
+            await sleep(delayMs);
+        }
+
+        const model1 =
+            findModelByLogicalLid(before.logicalLid) ||
+            findAnyModelByLabel(before.label) ||
+            refreshModelRef(model0) ||
+            model0;
+
+        const report = {
+            before,
+            after: {
+                id: getIdFromModel(model1),
+                type: getNodeType(model1),
+                label: getLabelFromModel(model1),
+                logicalLid: model1?.getVisual?.()?.logicalElement?.lid ?? null,
+                embeds: model1?.toJSON?.()?.embeds || []
+            }
+        };
+        log("inzoomTargetAio", report);
+        return model1;
+    }
+
     function getCurrentOpd() {
         return BOOT.capturedUiSeed.init?.opmModel?.currentOpd || null;
     }
@@ -2074,6 +2262,12 @@ Globals exposed:
         function summarizeNodeExport(m) {
             const j = getJson(m);
             const l = getLogical(m);
+            const embeds = Array.isArray(j.embeds) ? j.embeds.slice() : [];
+            const embeddedThingIds = embeds.filter(id => {
+                const cell = getAllCells().find(c => getIdFromModel(c) === id) || null;
+                const t = getNodeType(cell);
+                return t === "opm.Object" || t === "opm.Process";
+            });
             return {
                 id: getIdFromModel(m),
                 type: getNodeType(m),
@@ -2082,7 +2276,11 @@ Globals exposed:
                 size: j.size || null,
                 essence: l?._essence ?? null,
                 affiliation: l?._affiliation ?? null,
-                logicalLid: l?.lid ?? null
+                logicalLid: l?.lid ?? null,
+                parentId: j.parent ?? null,
+                embeddedIds: embeds,
+                embeddedThingIds,
+                isInZoomContainer: embeddedThingIds.length > 0
             };
         }
 
@@ -2529,7 +2727,12 @@ Globals exposed:
             const refreshed = refreshModelRef(model) || model;
             const p = exportedNode?.position;
             if (p && typeof p.x === "number" && typeof p.y === "number") {
-                refreshed.position(p.x, p.y);
+                const hasChildren = getEmbeddedThingChildren(refreshed, {deep: true}).length > 0;
+                if (hasChildren) {
+                    moveAndKeepChildrenPositionByPosition(refreshed, p.x, p.y);
+                } else {
+                    refreshed.position(p.x, p.y, {});
+                }
             }
             return {
                 runtimeId: getIdFromModel(refreshed),
@@ -2611,6 +2814,50 @@ Globals exposed:
             };
         }
 
+        async function ensureRuntimeInZoomForExportedNode(exportedNode, oldIdToRuntimeRef) {
+            const shouldInZoom = !!(
+                exportedNode && (
+                    exportedNode.isInZoomContainer === true ||
+                    (Array.isArray(exportedNode.embeddedThingIds) && exportedNode.embeddedThingIds.length > 0)
+                )
+            );
+            if (!shouldInZoom) {
+                return resolveRuntimeRef(oldIdToRuntimeRef.get(exportedNode?.id));
+            }
+            let runtimeModel = resolveRuntimeRef(oldIdToRuntimeRef.get(exportedNode.id));
+            if (!runtimeModel) return null;
+            runtimeModel = refreshModelRef(runtimeModel) || runtimeModel;
+            const runtimeEmbeddedThingCount = getEmbeddedThingChildren(runtimeModel, {deep: false})
+                .filter(c => {
+                    const t = getNodeType(c);
+                    return t === "opm.Object" || t === "opm.Process";
+                }).length;
+            if (runtimeEmbeddedThingCount === 0) {
+                runtimeModel = await inzoomTargetAio(runtimeModel);
+                runtimeModel = refreshModelRef(runtimeModel) || runtimeModel;
+                oldIdToRuntimeRef.set(exportedNode.id, buildNodeRefFromModel(runtimeModel));
+            }
+            return runtimeModel;
+        }
+
+        async function createRuntimeNodeFromExported(node, parentModel = null) {
+            const args = {
+                label: node.label,
+                x: node.position?.x,
+                y: node.position?.y,
+                ...(parentModel ? {parent: parentModel} : {})
+            };
+            let model;
+            if (isObjectNode(node)) {
+                model = await addObjectAio(args);
+            } else if (isProcessNode(node)) {
+                model = await addProcessAio(args);
+            } else {
+                throw new Error(`Unsupported node type: ${node.type}`);
+            }
+            return refreshModelRef(model) || model;
+        }
+
         assert(data && typeof data === "object", "data object required");
         assert(Array.isArray(data.nodes), "data.nodes must be an array");
 
@@ -2622,6 +2869,10 @@ Globals exposed:
 
         const oldIdToRuntimeRef = new Map();
         const oldStateIdToRuntimeRef = new Map();
+        const exportedNodes = Array.isArray(data.nodes) ? data.nodes.slice() : [];
+        const topLevelNodes = exportedNodes.filter(n => !n?.parentId);
+        const embeddedNodes = exportedNodes.filter(n => !!n?.parentId);
+        const exportedNodeById = new Map(exportedNodes.map(n => [n.id, n]));
 
         const reports = {
             createdNodes: [],
@@ -2637,34 +2888,53 @@ Globals exposed:
             }
         };
 
-        for (const node of data.nodes) {
-            let model;
-
-            if (isObjectNode(node)) {
-                model = await addObjectAio({
-                    label: node.label,
-                    x: node.position?.x,
-                    y: node.position?.y
-                });
-            } else if (isProcessNode(node)) {
-                model = await addProcessAio({
-                    label: node.label,
-                    x: node.position?.x,
-                    y: node.position?.y
-                });
-            } else {
-                throw new Error(`Unsupported node type: ${node.type}`);
-            }
-
-            model = refreshModelRef(model) || model;
+        for (const node of topLevelNodes) {
+            const model = await createRuntimeNodeFromExported(node, null);
             oldIdToRuntimeRef.set(node.id, buildNodeRefFromModel(model));
             reports.createdNodes.push({
                 exported: node,
                 runtime: summarizeModel(model)
             });
+        }
 
+        for (const node of topLevelNodes) {
+            await ensureRuntimeInZoomForExportedNode(node, oldIdToRuntimeRef);
+        }
+
+        const pendingEmbedded = embeddedNodes.slice();
+        while (pendingEmbedded.length) {
+            let progressed = false;
+            for (let i = 0; i < pendingEmbedded.length; i++) {
+                const node = pendingEmbedded[i];
+                const parentExported = exportedNodeById.get(node.parentId) || null;
+                if (!parentExported) {
+                    throw new Error(`Missing exported parent node for embedded node ${node.label}`);
+                }
+                let parentModel = resolveRuntimeRef(oldIdToRuntimeRef.get(node.parentId));
+                if (!parentModel) continue;
+                parentModel = await ensureRuntimeInZoomForExportedNode(parentExported, oldIdToRuntimeRef);
+                if (!parentModel) continue;
+
+                const model = await createRuntimeNodeFromExported(node, parentModel);
+                oldIdToRuntimeRef.set(node.id, buildNodeRefFromModel(model));
+                reports.createdNodes.push({
+                    exported: node,
+                    runtime: summarizeModel(model)
+                });
+                pendingEmbedded.splice(i, 1);
+                i -= 1;
+                progressed = true;
+            }
+            if (!progressed) {
+                throw new Error(`Could not resolve parent/inzoom chain for embedded nodes: ${pendingEmbedded.map(n => n.label).join(", ")}`);
+            }
+        }
+
+        for (const node of exportedNodes) {
+            const runtimeModel = resolveRuntimeRef(oldIdToRuntimeRef.get(node.id));
+            if (!runtimeModel) continue;
             reports.deferredGeometry.node.push(
-                await applyNodeGeometry(model, node)
+                await applyNodeGeometry(runtimeModel, node)
             );
         }
 
@@ -2685,6 +2955,12 @@ Globals exposed:
             });
 
             const refreshedParent = refreshModelRef(parentModel) || parentModel;
+            if (getNodeType(refreshedParent) === "opm.Object") {
+                try {
+                    fitObjectToEmbeddedStatesWithDefaults(refreshedParent);
+                } catch {
+                }
+            }
             const runtimeStates = getStatesByVisualOrder(refreshedParent);
             if (runtimeStates.length !== exportedStates.length) {
                 throw new Error(
@@ -2707,7 +2983,7 @@ Globals exposed:
             }
         }
 
-        for (const node of data.nodes) {
+        for (const node of exportedNodes) {
             const runtimeModel = resolveRuntimeRef(oldIdToRuntimeRef.get(node.id));
             if (!runtimeModel) continue;
 
@@ -2968,20 +3244,44 @@ Globals exposed:
             return navigateToRuntimeOpdId(runtimeOpdId);
         }
 
-        async function createNodeFromExportedNode(node) {
+        async function ensureRuntimeInZoomForExportedNode(node, runtimeRefsByExportedId) {
+            const shouldInZoom = !!(
+                node && (
+                    node.isInZoomContainer === true ||
+                    (Array.isArray(node.embeddedThingIds) && node.embeddedThingIds.length > 0)
+                )
+            );
+            if (!shouldInZoom) {
+                return resolveRuntimeRef(runtimeRefsByExportedId.get(node?.id));
+            }
+            let runtime = resolveRuntimeRef(runtimeRefsByExportedId.get(node.id));
+            if (!runtime) return null;
+            runtime = refreshModelRef(runtime) || runtime;
+            const runtimeEmbeddedThingCount = getEmbeddedThingChildren(runtime, {deep: false})
+                .filter(c => {
+                    const t = getNodeType(c);
+                    return t === "opm.Object" || t === "opm.Process";
+                }).length;
+            if (runtimeEmbeddedThingCount === 0) {
+                runtime = await inzoomTargetAio(runtime);
+                runtime = refreshModelRef(runtime) || runtime;
+                runtimeRefsByExportedId.set(node.id, buildNodeRefFromModel(runtime));
+            }
+            return runtime;
+        }
+
+        async function createNodeFromExportedNode(node, parent = null) {
             let model;
+            const args = {
+                label: node.label,
+                x: node.position?.x,
+                y: node.position?.y,
+                ...(parent ? {parent} : {})
+            };
             if (node?.type === "opm.Object") {
-                model = await addObjectAio({
-                    label: node.label,
-                    x: node.position?.x,
-                    y: node.position?.y
-                });
+                model = await addObjectAio(args);
             } else if (node?.type === "opm.Process") {
-                model = await addProcessAio({
-                    label: node.label,
-                    x: node.position?.x,
-                    y: node.position?.y
-                });
+                model = await addProcessAio(args);
             } else {
                 throw new Error(`Unsupported node type: ${node?.type}`);
             }
@@ -3046,23 +3346,23 @@ Globals exposed:
             const runtimeRefsByExportedId = new Map();
             const runtimeStateRefsByExportedId = new Map();
 
-            for (const node of exportedNodes) {
-                let model = safeFindCurrentByLabel(node.label);
+            const topLevelNodes = exportedNodes.filter(n => !n?.parentId);
 
+            for (const node of topLevelNodes) {
+                let model = safeFindCurrentByLabel(node.label);
                 if (!model) {
-                    model = await createNodeFromExportedNode(node);
+                    model = await createNodeFromExportedNode(node, null);
                 } else {
                     log("importEntireOpdTree.reuseExistingVisualByLabel", {
                         requested: node.label,
                         runtime: summarizeModel(model)
                     });
                 }
-
                 model = refreshModelRef(model) || model;
                 runtimeRefsByExportedId.set(node.id, buildNodeRefFromModel(model));
             }
 
-            for (const node of exportedNodes) {
+            for (const node of topLevelNodes) {
                 let runtime = resolveRuntimeRef(runtimeRefsByExportedId.get(node.id));
                 if (!runtime) continue;
 
@@ -3074,7 +3374,12 @@ Globals exposed:
 
                 if (node?.position && typeof node.position.x === "number" && typeof node.position.y === "number") {
                     try {
-                        runtime.position(node.position.x, node.position.y);
+                        const hasChildren = getEmbeddedThingChildren(runtime, {deep: true}).length > 0;
+                        if (hasChildren) {
+                            moveAndKeepChildrenPositionByPosition(runtime, node.position.x, node.position.y);
+                        } else {
+                            runtime.position(node.position.x, node.position.y, {});
+                        }
                     } catch {
                     }
                 }
@@ -3083,7 +3388,7 @@ Globals exposed:
                 runtimeRefsByExportedId.set(node.id, buildNodeRefFromModel(runtime));
             }
 
-            for (const node of exportedNodes) {
+            for (const node of topLevelNodes) {
                 const runtimeRef = runtimeRefsByExportedId.get(node.id);
                 if (!runtimeRef) continue;
                 const stateInfo = await ensureStatesForEntry(entry, node.id, runtimeRef);
@@ -3091,14 +3396,91 @@ Globals exposed:
                     runtimeStateRefsByExportedId.set(exportedStateId, runtimeStateRef);
                 }
                 const refreshedRuntime = resolveRuntimeRef(runtimeRef);
-                if (refreshedRuntime) {
-                    runtimeRefsByExportedId.set(node.id, buildNodeRefFromModel(refreshedRuntime));
+                if (refreshedRuntime && getNodeType(refreshedRuntime) === "opm.Object") {
+                    try {
+                        fitObjectToEmbeddedStatesWithDefaults(refreshedRuntime);
+                    } catch {
+                    }
+                    runtimeRefsByExportedId.set(node.id, buildNodeRefFromModel(refreshModelRef(refreshedRuntime) || refreshedRuntime));
                 }
             }
 
             return {
                 runtimeRefsByExportedId,
                 runtimeStateRefsByExportedId
+            };
+        }
+
+        async function applyInZoomStructuresInCurrentOpd(entry, runtimeRefsByExportedId, runtimeStateRefsByExportedId) {
+            const exportedNodes = entry?.local?.nodes || [];
+            const exportedNodeById = new Map(exportedNodes.map(n => [n.id, n]));
+            const inZoomContainers = exportedNodes.filter(n => !n?.parentId && (n?.isInZoomContainer === true || (Array.isArray(n?.embeddedThingIds) && n.embeddedThingIds.length)));
+            const embeddedNodes = exportedNodes.filter(n => !!n?.parentId);
+
+            for (const node of inZoomContainers) {
+                await ensureRuntimeInZoomForExportedNode(node, runtimeRefsByExportedId);
+            }
+
+            const pendingEmbedded = embeddedNodes.slice();
+            while (pendingEmbedded.length) {
+                let progressed = false;
+                for (let i = 0; i < pendingEmbedded.length; i++) {
+                    const node = pendingEmbedded[i];
+                    const parentExported = exportedNodeById.get(node.parentId) || null;
+                    if (!parentExported) {
+                        throw new Error(`Missing exported parent for embedded node ${node.label}`);
+                    }
+                    let parentRuntime = resolveRuntimeRef(runtimeRefsByExportedId.get(node.parentId));
+                    if (!parentRuntime) continue;
+                    parentRuntime = await ensureRuntimeInZoomForExportedNode(parentExported, runtimeRefsByExportedId);
+                    if (!parentRuntime) continue;
+
+                    let model = safeFindCurrentByLabel(node.label);
+                    if (!model) {
+                        model = await createNodeFromExportedNode(node, parentRuntime);
+                    }
+                    model = refreshModelRef(model) || model;
+
+                    if (node?.position && typeof node.position.x === "number" && typeof node.position.y === "number") {
+                        try {
+                            const hasChildren = getEmbeddedThingChildren(model, {deep: true}).length > 0;
+                            if (hasChildren) {
+                                moveAndKeepChildrenPositionByPosition(model, node.position.x, node.position.y);
+                            } else {
+                                model.position(node.position.x, node.position.y, {});
+                            }
+                        } catch {
+                        }
+                    }
+
+                    runtimeRefsByExportedId.set(node.id, buildNodeRefFromModel(model));
+
+                    const stateInfo = await ensureStatesForEntry(entry, node.id, runtimeRefsByExportedId.get(node.id));
+                    for (const [exportedStateId, runtimeStateRef] of stateInfo.runtimeStateRefsByExportedId.entries()) {
+                        runtimeStateRefsByExportedId.set(exportedStateId, runtimeStateRef);
+                    }
+
+                    const refreshedRuntime = resolveRuntimeRef(runtimeRefsByExportedId.get(node.id));
+                    if (refreshedRuntime && getNodeType(refreshedRuntime) === "opm.Object") {
+                        try {
+                            fitObjectToEmbeddedStatesWithDefaults(refreshedRuntime);
+                        } catch {
+                        }
+                        runtimeRefsByExportedId.set(node.id, buildNodeRefFromModel(refreshModelRef(refreshedRuntime) || refreshedRuntime));
+                    }
+
+                    pendingEmbedded.splice(i, 1);
+                    i -= 1;
+                    progressed = true;
+                }
+                if (!progressed) {
+                    throw new Error(`Could not resolve parent/inzoom chain for embedded nodes: ${pendingEmbedded.map(n => n.label).join(", ")}`);
+                }
+            }
+
+            return {
+                inZoomContainers: inZoomContainers.map(n => n.label),
+                embeddedCount: embeddedNodes.length
             };
         }
 
@@ -3122,11 +3504,16 @@ Globals exposed:
             };
         }
 
-        async function rebuildLinks(entry, runtimeRefsByExportedId, runtimeStateRefsByExportedId) {
+        async function rebuildLinks(entry, runtimeRefsByExportedId, runtimeStateRefsByExportedId, {
+            doneProceduralIds = new Set(),
+            doneFundamentalGroupIds = new Set()
+        } = {}) {
             const made = {
                 procedural: [],
                 fundamental: [],
-                fundamentalGroups: []
+                fundamentalGroups: [],
+                skippedProcedural: [],
+                skippedFundamentalGroups: []
             };
 
             const resolveEndpoint = (exportedId) => {
@@ -3136,15 +3523,14 @@ Globals exposed:
             };
 
             for (const link of entry?.local?.proceduralLinks || []) {
+                if (doneProceduralIds.has(link.id)) continue;
                 const src = resolveEndpoint(link.sourceId);
                 const tgt = resolveEndpoint(link.targetId);
                 if (!src || !tgt) {
-                    log("importEntireOpdTree.procedural.skipMissingEndpoint", {
-                        link,
+                    made.skippedProcedural.push({
+                        exported: link,
                         srcFound: !!src,
-                        tgtFound: !!tgt,
-                        sourceId: link.sourceId,
-                        targetId: link.targetId
+                        tgtFound: !!tgt
                     });
                     continue;
                 }
@@ -3154,22 +3540,32 @@ Globals exposed:
                     runtimeLinkId: rep.created?.id ?? null,
                     report: rep.report
                 });
+                doneProceduralIds.add(link.id);
             }
 
             for (const group of entry?.local?.fundamentalGroups || []) {
+                if (doneFundamentalGroupIds.has(group.triangleId)) continue;
                 const owner = resolveEndpoint(group.ownerId);
                 if (!owner) {
-                    log("importEntireOpdTree.fundamental.skipMissingOwner", {group});
+                    made.skippedFundamentalGroups.push({
+                        exported: group,
+                        reason: "missing owner"
+                    });
+                    continue;
+                }
+
+                const expectedTargets = (group.memberLinks || []).map(memberLink => resolveEndpoint(memberLink.targetId));
+                if (expectedTargets.some(x => !x)) {
+                    made.skippedFundamentalGroups.push({
+                        exported: group,
+                        reason: "missing member target"
+                    });
                     continue;
                 }
 
                 const createdMembers = [];
                 for (const memberLink of group.memberLinks || []) {
                     const tgt = resolveEndpoint(memberLink.targetId);
-                    if (!tgt) {
-                        log("importEntireOpdTree.fundamental.skipMissingTarget", {memberLink});
-                        continue;
-                    }
                     const rep = await addLinkAio(owner, tgt, buildFundamentalLinkParams(memberLink));
                     createdMembers.push({
                         exported: memberLink,
@@ -3180,12 +3576,7 @@ Globals exposed:
                 }
 
                 const ownerId = getIdFromModel(refreshModelRef(owner) || owner);
-                const expectedRuntimeTargets = new Set(
-                    (group.memberLinks || [])
-                        .map(x => resolveEndpoint(x.targetId))
-                        .filter(Boolean)
-                        .map(t => getIdFromModel(refreshModelRef(t) || t))
-                );
+                const expectedRuntimeTargets = new Set(expectedTargets.map(t => getIdFromModel(refreshModelRef(t) || t)).filter(Boolean));
                 const currentGroups = inspectCurrentFundamentalGroups();
                 const runtimeGroup = currentGroups.find(g => {
                     const ownerLink = g?.ownerLink?.toJSON?.() || {};
@@ -3205,6 +3596,7 @@ Globals exposed:
                     runtimeOwnerLinkId: runtimeGroup?.ownerLinkId ?? null,
                     createdMembers
                 });
+                doneFundamentalGroupIds.add(group.triangleId);
             }
 
             return made;
@@ -3252,10 +3644,47 @@ Globals exposed:
             return deleted;
         }
 
-        async function unfoldFromParentIntoChildEntry(childEntry) {
+        function getFocalLocalNodeInChildEntry(childEntry) {
+            const focalLabel = childEntry?.hierarchy?.focalThingLabelInParent;
+            if (!focalLabel) return null;
+            return (childEntry?.local?.nodes || []).find(n => {
+                const t = n?.type;
+                return (t === "opm.Object" || t === "opm.Process") && n?.label === focalLabel;
+            }) || null;
+        }
+
+        function childEntryShouldInZoom(childEntry) {
+            const focalLocalNode = getFocalLocalNodeInChildEntry(childEntry);
+            if (!focalLocalNode) return false;
+            return !!(
+                focalLocalNode.isInZoomContainer === true ||
+                (Array.isArray(focalLocalNode.embeddedThingIds) && focalLocalNode.embeddedThingIds.length > 0)
+            );
+        }
+
+        async function expandFromParentIntoChildEntry(childEntry) {
             const focalLabel = childEntry?.hierarchy?.focalThingLabelInParent;
             if (!focalLabel) {
                 throw new Error(`Missing focalThingLabelInParent for ${childEntry?.hierarchy?.opdId}`);
+            }
+
+            const mode = childEntryShouldInZoom(childEntry) ? "inzoom" : "unfold";
+
+            if (mode === "inzoom") {
+                const parentRuntimeOpd = getCurrentRuntimeOpd();
+                const rep = await inzoomTargetAio(focalLabel, {delayMs: unfoldDelayMs});
+                const now = getCurrentRuntimeOpd();
+                if (!now?.id) {
+                    throw new Error(`In-zoom did not leave importer on a current runtime OPD for ${focalLabel}`);
+                }
+                return {
+                    mode,
+                    runtimeChildOpdId: now.id,
+                    runtimeChildOpd: summarizeOpd(now),
+                    report: rep,
+                    newlyCreated: false,
+                    sameRuntimeOpdAsParent: !!(parentRuntimeOpd?.id && parentRuntimeOpd.id === now.id)
+                };
             }
 
             const rep = await unfoldTargetAio(focalLabel, {
@@ -3271,10 +3700,12 @@ Globals exposed:
             const newlyCreated = !!(rep?.newOpdIds?.length > 0);
 
             return {
+                mode,
                 runtimeChildOpdId: now.id,
                 runtimeChildOpd: summarizeOpd(now),
                 report: rep,
-                newlyCreated
+                newlyCreated,
+                sameRuntimeOpdAsParent: false
             };
         }
 
@@ -3358,7 +3789,28 @@ Globals exposed:
             };
 
             const {runtimeRefsByExportedId, runtimeStateRefsByExportedId} = await ensureLocalNodes(entry);
-            const links = await rebuildLinks(entry, runtimeRefsByExportedId, runtimeStateRefsByExportedId);
+            const proceduralDoneIds = new Set();
+            const fundamentalDoneIds = new Set();
+            const linksBeforeInZoom = await rebuildLinks(entry, runtimeRefsByExportedId, runtimeStateRefsByExportedId, {
+                doneProceduralIds: proceduralDoneIds,
+                doneFundamentalGroupIds: fundamentalDoneIds
+            });
+            const inZoom = await applyInZoomStructuresInCurrentOpd(entry, runtimeRefsByExportedId, runtimeStateRefsByExportedId);
+            const linksAfterInZoom = await rebuildLinks(entry, runtimeRefsByExportedId, runtimeStateRefsByExportedId, {
+                doneProceduralIds: proceduralDoneIds,
+                doneFundamentalGroupIds: fundamentalDoneIds
+            });
+            const links = {
+                procedural: [...linksBeforeInZoom.procedural, ...linksAfterInZoom.procedural],
+                fundamental: [...linksBeforeInZoom.fundamental, ...linksAfterInZoom.fundamental],
+                fundamentalGroups: [...linksBeforeInZoom.fundamentalGroups, ...linksAfterInZoom.fundamentalGroups],
+                skippedProcedural: linksAfterInZoom.skippedProcedural,
+                skippedFundamentalGroups: linksAfterInZoom.skippedFundamentalGroups,
+                phases: {
+                    beforeInZoom: linksBeforeInZoom,
+                    afterInZoom: linksAfterInZoom
+                }
+            };
 
             const geometryReplay = {
                 procedural: [],
@@ -3391,6 +3843,7 @@ Globals exposed:
 
             const report = {
                 opdName,
+                inZoom,
                 exportedOpdId: entry?.hierarchy?.opdId,
                 runtimeCurrentOpd: summarizeOpd(getCurrentOpd()),
                 createdOrMatched: [...runtimeRefsByExportedId.entries()].map(([oldId, ref]) => ({
@@ -3415,7 +3868,7 @@ Globals exposed:
             for (const childEntry of childEntries) {
                 await navigateToExportedOpdId(entry.hierarchy.opdId);
 
-                const unfoldRep = await unfoldFromParentIntoChildEntry(childEntry);
+                const unfoldRep = await expandFromParentIntoChildEntry(childEntry);
 
                 setRuntimeOpdId(childEntry.hierarchy.opdId, unfoldRep.runtimeChildOpdId);
 
@@ -3423,10 +3876,12 @@ Globals exposed:
                     exportedOpdId: childEntry.hierarchy.opdId,
                     exportedOpdName: childEntry.hierarchy.opdName,
                     runtimeOpdId: unfoldRep.runtimeChildOpdId,
-                    runtimeOpd: unfoldRep.runtimeChildOpd
+                    runtimeOpd: unfoldRep.runtimeChildOpd,
+                    mode: unfoldRep.mode,
+                    sameRuntimeOpdAsParent: unfoldRep.sameRuntimeOpdAsParent
                 });
 
-                if (unfoldRep.newlyCreated) {
+                if (unfoldRep.mode === "unfold" && unfoldRep.newlyCreated) {
                     if (cleanupGeneratedLinks) {
                         await cleanupAllExistingLinksAio();
                     }
@@ -3479,7 +3934,7 @@ Globals exposed:
        Cleanup helpers
     ------------------------------*/
 
-    function createNodeFromCtor(Ctor, {label, x, y} = {}) {
+    function createNodeFromCtor(Ctor, {label, x, y, parent} = {}) {
         if (!Ctor) throw new Error("Ctor is required");
 
         const graph =
@@ -3495,13 +3950,39 @@ Globals exposed:
         if (!graph) throw new Error("No graph available; bootstrap an object or process first");
 
         const node = new Ctor();
-        if (typeof x === "number" && typeof y === "number") {
-            node.position(x, y);
-        }
         if (label) {
             setLabelOnModel(node, label);
         }
-        graph.addCell(node);
+
+        const hasParent = !!parent;
+        if (hasParent) {
+            const parentModel = typeof parent === "string"
+                ? getCurrentGraphCells().find(c => getIdFromModel(c) === parent) || findAnyModelByLabel(parent)
+                : parent;
+
+            if (!parentModel) {
+                throw new Error(`Could not resolve parent: ${parent}`);
+            }
+
+            const parentId = getIdFromModel(parentModel);
+            if (!parentId) {
+                throw new Error("Resolved parent has no ID");
+            }
+
+            node.parent(parentId, {});
+            parentModel.embed(node, {});
+            graph.addCell(node);
+
+            if (typeof x === "number" && typeof y === "number") {
+                node.position(x, y, {});
+            }
+        } else {
+            if (typeof x === "number" && typeof y === "number") {
+                node.position(x, y);
+            }
+            graph.addCell(node);
+        }
+
         BOOT.cachedGraph = graph;
         return node;
     }
@@ -3608,13 +4089,13 @@ Globals exposed:
         };
     }
 
-    async function addObjectAio({label, x, y} = {}) {
+    async function addObjectAio({label, x, y, parent} = {}) {
         await bootstrapRuntimeOnce();
 
         const Ctor = BOOT.bootConstructors.object;
         if (!Ctor) throw new Error("No bootstrapped object constructor available");
 
-        const obj = createNodeFromCtor(Ctor, {x, y});
+        const obj = createNodeFromCtor(Ctor, {x, y, parent});
         if (label) {
             await renameNodeAio(obj, label);
         }
@@ -3622,19 +4103,20 @@ Globals exposed:
         log("addObjectAio", {
             id: getIdFromModel(obj),
             label: getLabelFromModel(obj),
-            position: getPositionFromModel(obj)
+            position: getPositionFromModel(obj),
+            parent: obj?.parent?.() ?? obj?.toJSON?.()?.parent ?? null
         });
 
         return obj;
     }
 
-    async function addProcessAio({label, x, y} = {}) {
+    async function addProcessAio({label, x, y, parent} = {}) {
         await bootstrapRuntimeOnce();
 
         const Ctor = BOOT.bootConstructors.process;
         if (!Ctor) throw new Error("No bootstrapped process constructor available");
 
-        const proc = createNodeFromCtor(Ctor, {x, y});
+        const proc = createNodeFromCtor(Ctor, {x, y, parent});
         if (label) {
             await renameNodeAio(proc, label);
         }
@@ -3642,7 +4124,8 @@ Globals exposed:
         log("addProcessAio", {
             id: getIdFromModel(proc),
             label: getLabelFromModel(proc),
-            position: getPositionFromModel(proc)
+            position: getPositionFromModel(proc),
+            parent: proc?.parent?.() ?? proc?.toJSON?.()?.parent ?? null
         });
 
         return proc;
@@ -3701,6 +4184,9 @@ Globals exposed:
         getStatesByVisualOrder,
         countStates,
         summarizeStates,
+        getEmbeddedThingChildren,
+        moveAndKeepChildrenPositionByPosition,
+        fitObjectToEmbeddedStatesWithDefaults,
         inspectStateNameBindings,
         inspectEssenceBindings,
         syncStateNameBindings,
@@ -3712,6 +4198,7 @@ Globals exposed:
         resolveLinkEndpoint,
         summarizeSemanticLink,
         addLinkAio,
+        inzoomTargetAio,
         getCurrentOpd,
         summarizeOpd,
         summarizeGraphCell,
@@ -3787,6 +4274,7 @@ Globals exposed:
     window.addObjectAio = addObjectAio;
     window.addProcessAio = addProcessAio;
     window.addLinkAio = addLinkAio;
+    window.inzoomTargetAio = inzoomTargetAio;
     window.exportCurrentOpdV2 = exportCurrentOpdV2;
     window.exportEntireOpdTree = exportEntireOpdTree;
     window.importOpdData = importOpdData;
