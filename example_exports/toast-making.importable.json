@@ -1,0 +1,264 @@
+{
+  "version": 1,
+  "meta": {
+    "exportedAt": "2026-03-18T07:28:55.096228Z",
+    "tool": "opcloud-authoring-builder",
+    "opdCount": 1
+  },
+  "opds": [
+    {
+      "hierarchy": {
+        "opdId": "SD",
+        "opdName": "SD",
+        "opdPath": [
+          "SD"
+        ],
+        "parentOpdId": "SD",
+        "childOpdIds": []
+      },
+      "local": {
+        "version": 2,
+        "meta": {
+          "exportedAt": "2026-03-18T07:28:55.096193Z",
+          "tool": "opcloud-authoring-builder"
+        },
+        "nodes": [
+          {
+            "id": "6218ef97-7e13-5bc8-b0ac-645d28574593",
+            "type": "opm.Process",
+            "label": "Toast Making",
+            "position": {
+              "x": 430,
+              "y": 190
+            },
+            "size": {
+              "width": 135,
+              "height": 60
+            },
+            "essence": 0,
+            "affiliation": 0,
+            "embeddedIds": [],
+            "embeddedThingIds": [],
+            "isInZoomContainer": false
+          },
+          {
+            "id": "8a953cc8-cb07-599b-8939-3a91c59c0b8c",
+            "type": "opm.Object",
+            "label": "Toaster",
+            "position": {
+              "x": 430,
+              "y": 360
+            },
+            "size": {
+              "width": 180,
+              "height": 85
+            },
+            "essence": 0,
+            "affiliation": 0,
+            "embeddedIds": [
+              "92ccefdc-43f1-543d-b6a3-42f280a26373",
+              "c52dc8bb-0ff3-5a5a-a44d-f40eb3eca21e"
+            ],
+            "embeddedThingIds": [],
+            "isInZoomContainer": false
+          },
+          {
+            "id": "bdebdd1f-12b6-5b5f-ae28-fdad9885871d",
+            "type": "opm.Object",
+            "label": "Power Cord",
+            "position": {
+              "x": 180,
+              "y": 510
+            },
+            "size": {
+              "width": 135,
+              "height": 60
+            },
+            "essence": 0,
+            "affiliation": 0,
+            "embeddedIds": [],
+            "embeddedThingIds": [],
+            "isInZoomContainer": false
+          },
+          {
+            "id": "0eb6366b-a901-5f9a-a607-cf6f272e0801",
+            "type": "opm.Object",
+            "label": "Heating Element",
+            "position": {
+              "x": 650,
+              "y": 510
+            },
+            "size": {
+              "width": 135,
+              "height": 60
+            },
+            "essence": 0,
+            "affiliation": 0,
+            "embeddedIds": [],
+            "embeddedThingIds": [],
+            "isInZoomContainer": false
+          },
+          {
+            "id": "e0a27012-e014-514b-8de8-5e9ae0d2f87b",
+            "type": "opm.Object",
+            "label": "Bread",
+            "position": {
+              "x": 120,
+              "y": 200
+            },
+            "size": {
+              "width": 135,
+              "height": 60
+            },
+            "essence": 0,
+            "affiliation": 0,
+            "embeddedIds": [],
+            "embeddedThingIds": [],
+            "isInZoomContainer": false
+          },
+          {
+            "id": "0f36ccbe-df2b-5b14-92d4-ef098c6325d1",
+            "type": "opm.Object",
+            "label": "Toast",
+            "position": {
+              "x": 740,
+              "y": 200
+            },
+            "size": {
+              "width": 135,
+              "height": 60
+            },
+            "essence": 0,
+            "affiliation": 0,
+            "embeddedIds": [],
+            "embeddedThingIds": [],
+            "isInZoomContainer": false
+          },
+          {
+            "id": "4ad96370-bfee-5358-8608-c65450588737",
+            "type": "opm.Object",
+            "label": "Human Operator",
+            "position": {
+              "x": 120,
+              "y": 360
+            },
+            "size": {
+              "width": 165,
+              "height": 70
+            },
+            "essence": 0,
+            "affiliation": 1,
+            "embeddedIds": [],
+            "embeddedThingIds": [],
+            "isInZoomContainer": false
+          }
+        ],
+        "statesByParent": {
+          "8a953cc8-cb07-599b-8939-3a91c59c0b8c": [
+            {
+              "id": "92ccefdc-43f1-543d-b6a3-42f280a26373",
+              "label": "off",
+              "parentId": "8a953cc8-cb07-599b-8939-3a91c59c0b8c"
+            },
+            {
+              "id": "c52dc8bb-0ff3-5a5a-a44d-f40eb3eca21e",
+              "label": "heating",
+              "parentId": "8a953cc8-cb07-599b-8939-3a91c59c0b8c"
+            }
+          ]
+        },
+        "proceduralLinks": [
+          {
+            "id": "c4a02345-2ed1-558d-a45a-7f74845dec1e",
+            "linkType": 2,
+            "sourceId": "e0a27012-e014-514b-8de8-5e9ae0d2f87b",
+            "targetId": "6218ef97-7e13-5bc8-b0ac-645d28574593",
+            "geometry": {
+              "vertices": [],
+              "labels": []
+            }
+          },
+          {
+            "id": "99c4c92a-7be8-568a-830a-727b63249574",
+            "linkType": 3,
+            "sourceId": "6218ef97-7e13-5bc8-b0ac-645d28574593",
+            "targetId": "0f36ccbe-df2b-5b14-92d4-ef098c6325d1",
+            "geometry": {
+              "vertices": [],
+              "labels": []
+            }
+          },
+          {
+            "id": "69aaaa88-b50b-5b0a-b0a8-553bf4ef4091",
+            "linkType": 2,
+            "sourceId": "92ccefdc-43f1-543d-b6a3-42f280a26373",
+            "targetId": "6218ef97-7e13-5bc8-b0ac-645d28574593",
+            "geometry": {
+              "vertices": [],
+              "labels": []
+            }
+          },
+          {
+            "id": "d2b88f3c-1fc7-58e7-bd19-3fc66e264688",
+            "linkType": 3,
+            "sourceId": "6218ef97-7e13-5bc8-b0ac-645d28574593",
+            "targetId": "c52dc8bb-0ff3-5a5a-a44d-f40eb3eca21e",
+            "geometry": {
+              "vertices": [],
+              "labels": []
+            }
+          },
+          {
+            "id": "c33db45d-7de2-51f9-9361-2e356d4c4f95",
+            "linkType": 0,
+            "sourceId": "4ad96370-bfee-5358-8608-c65450588737",
+            "targetId": "6218ef97-7e13-5bc8-b0ac-645d28574593",
+            "geometry": {
+              "vertices": [],
+              "labels": []
+            }
+          }
+        ],
+        "fundamentalGroups": [
+          {
+            "triangleId": "b1b729fb-a0fa-5450-ac9b-85dec0247f97",
+            "ownerId": "8a953cc8-cb07-599b-8939-3a91c59c0b8c",
+            "groupType": 11,
+            "ownerLink": {
+              "id": "03c427b2-b957-589c-afd5-0413726593c8",
+              "geometry": {
+                "vertices": [],
+                "labels": []
+              }
+            },
+            "memberIds": [
+              "bdebdd1f-12b6-5b5f-ae28-fdad9885871d",
+              "0eb6366b-a901-5f9a-a607-cf6f272e0801"
+            ],
+            "memberLinks": [
+              {
+                "id": "6960ef89-fda8-5649-9865-d53160551b7b",
+                "linkType": 11,
+                "targetId": "bdebdd1f-12b6-5b5f-ae28-fdad9885871d",
+                "geometry": {
+                  "vertices": [],
+                  "labels": []
+                }
+              },
+              {
+                "id": "34646453-90f0-5322-9706-b4e50f27dc42",
+                "linkType": 11,
+                "targetId": "0eb6366b-a901-5f9a-a607-cf6f272e0801",
+                "geometry": {
+                  "vertices": [],
+                  "labels": []
+                }
+              }
+            ]
+          }
+        ],
+        "leftovers": []
+      }
+    }
+  ]
+}

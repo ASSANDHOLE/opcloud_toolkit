@@ -1,0 +1,1238 @@
+{
+  "version": 1,
+  "meta": {
+    "exportedAt": "2026-03-18T15:50:20.155507Z",
+    "tool": "opcloud-authoring-builder",
+    "opdCount": 4
+  },
+  "opds": [
+    {
+      "hierarchy": {
+        "opdId": "SD",
+        "opdName": "SD",
+        "opdPath": [
+          "SD"
+        ],
+        "parentOpdId": "SD",
+        "childOpdIds": [
+          "d9f0a257-fcee-554c-b6ac-4686e6cc7405",
+          "a6a96c2d-fd0e-5628-b9f8-b5b44577e70f"
+        ]
+      },
+      "local": {
+        "version": 2,
+        "meta": {
+          "exportedAt": "2026-03-18T15:50:20.155111Z",
+          "tool": "opcloud-authoring-builder"
+        },
+        "nodes": [
+          {
+            "id": "1aaaa324-d3f9-5d37-82e8-43220a52e6ce",
+            "type": "opm.Object",
+            "label": "User",
+            "position": {
+              "x": 300,
+              "y": 50
+            },
+            "size": {
+              "width": 135,
+              "height": 60
+            },
+            "essence": 0,
+            "affiliation": 1,
+            "embeddedIds": [],
+            "embeddedThingIds": [],
+            "isInZoomContainer": false
+          },
+          {
+            "id": "b7e08539-f06d-5338-86d5-9dd23e5d3fdb",
+            "type": "opm.Object",
+            "label": "User Request",
+            "position": {
+              "x": 300,
+              "y": 200
+            },
+            "size": {
+              "width": 135,
+              "height": 60
+            },
+            "essence": 1,
+            "affiliation": 0,
+            "embeddedIds": [],
+            "embeddedThingIds": [],
+            "isInZoomContainer": false
+          },
+          {
+            "id": "d6451de5-2151-5dbb-9f62-f7241d7dbf02",
+            "type": "opm.Process",
+            "label": "Task Handling",
+            "position": {
+              "x": 500,
+              "y": 200
+            },
+            "size": {
+              "width": 135,
+              "height": 60
+            },
+            "essence": 1,
+            "affiliation": 0,
+            "embeddedIds": [],
+            "embeddedThingIds": [],
+            "isInZoomContainer": false
+          },
+          {
+            "id": "38e13025-0421-53c2-89d9-bfdc131ae876",
+            "type": "opm.Object",
+            "label": "Response",
+            "position": {
+              "x": 700,
+              "y": 200
+            },
+            "size": {
+              "width": 135,
+              "height": 60
+            },
+            "essence": 1,
+            "affiliation": 0,
+            "embeddedIds": [],
+            "embeddedThingIds": [],
+            "isInZoomContainer": false
+          },
+          {
+            "id": "cc2f1287-594d-5428-a1de-6e8a5718a2f0",
+            "type": "opm.Object",
+            "label": "Codex App",
+            "position": {
+              "x": 300,
+              "y": 350
+            },
+            "size": {
+              "width": 135,
+              "height": 60
+            },
+            "essence": 1,
+            "affiliation": 0,
+            "embeddedIds": [],
+            "embeddedThingIds": [],
+            "isInZoomContainer": false
+          },
+          {
+            "id": "3c49fd76-cce4-5a15-8b48-62a8849c02c5",
+            "type": "opm.Object",
+            "label": "Workspace",
+            "position": {
+              "x": 500,
+              "y": 350
+            },
+            "size": {
+              "width": 135,
+              "height": 60
+            },
+            "essence": 1,
+            "affiliation": 0,
+            "embeddedIds": [],
+            "embeddedThingIds": [],
+            "isInZoomContainer": false
+          },
+          {
+            "id": "cd29058b-c707-5b56-bd81-e0b6a9d3f6da",
+            "type": "opm.Object",
+            "label": "Tooling Environment",
+            "position": {
+              "x": 700,
+              "y": 350
+            },
+            "size": {
+              "width": 135,
+              "height": 60
+            },
+            "essence": 1,
+            "affiliation": 0,
+            "embeddedIds": [],
+            "embeddedThingIds": [],
+            "isInZoomContainer": false
+          }
+        ],
+        "statesByParent": {},
+        "proceduralLinks": [
+          {
+            "id": "e098f0c8-2d2f-5cbf-b8aa-31f8510fb726",
+            "linkType": 2,
+            "sourceId": "b7e08539-f06d-5338-86d5-9dd23e5d3fdb",
+            "targetId": "d6451de5-2151-5dbb-9f62-f7241d7dbf02",
+            "geometry": {
+              "vertices": [],
+              "labels": []
+            }
+          },
+          {
+            "id": "a338a37e-a4bd-524b-b571-bc3975ae355a",
+            "linkType": 3,
+            "sourceId": "d6451de5-2151-5dbb-9f62-f7241d7dbf02",
+            "targetId": "38e13025-0421-53c2-89d9-bfdc131ae876",
+            "geometry": {
+              "vertices": [],
+              "labels": []
+            }
+          },
+          {
+            "id": "8883b7de-77ef-54b1-a5a4-c510a0752a33",
+            "linkType": 1,
+            "sourceId": "cc2f1287-594d-5428-a1de-6e8a5718a2f0",
+            "targetId": "d6451de5-2151-5dbb-9f62-f7241d7dbf02",
+            "geometry": {
+              "vertices": [],
+              "labels": []
+            }
+          },
+          {
+            "id": "540e5139-dbbd-5710-8d4b-7d7a246e046d",
+            "linkType": 1,
+            "sourceId": "3c49fd76-cce4-5a15-8b48-62a8849c02c5",
+            "targetId": "d6451de5-2151-5dbb-9f62-f7241d7dbf02",
+            "geometry": {
+              "vertices": [],
+              "labels": []
+            }
+          },
+          {
+            "id": "53f92a1b-e952-50d7-aae7-53c7c50a5502",
+            "linkType": 1,
+            "sourceId": "cd29058b-c707-5b56-bd81-e0b6a9d3f6da",
+            "targetId": "d6451de5-2151-5dbb-9f62-f7241d7dbf02",
+            "geometry": {
+              "vertices": [],
+              "labels": []
+            }
+          }
+        ],
+        "fundamentalGroups": [
+          {
+            "triangleId": "47dc0019-938c-52f9-a303-f65199d8693d",
+            "triangleGeometry": {
+              "position": {
+                "x": 352,
+                "y": 143
+              },
+              "size": {
+                "width": 30,
+                "height": 25
+              },
+              "angle": 0
+            },
+            "ownerId": "1aaaa324-d3f9-5d37-82e8-43220a52e6ce",
+            "groupType": 12,
+            "ownerLink": {
+              "id": "8fc867cc-14b1-5f5b-b7de-b8debe119fba",
+              "geometry": {
+                "vertices": [],
+                "labels": []
+              }
+            },
+            "memberIds": [
+              "b7e08539-f06d-5338-86d5-9dd23e5d3fdb"
+            ],
+            "memberLinks": [
+              {
+                "id": "ee45ebda-46ed-5537-b8d9-60f3454619d7",
+                "linkType": 12,
+                "targetId": "b7e08539-f06d-5338-86d5-9dd23e5d3fdb",
+                "geometry": {
+                  "vertices": [],
+                  "labels": []
+                }
+              }
+            ]
+          }
+        ],
+        "leftovers": []
+      }
+    },
+    {
+      "hierarchy": {
+        "opdId": "d9f0a257-fcee-554c-b6ac-4686e6cc7405",
+        "opdName": "Task Handling",
+        "opdPath": [
+          "SD",
+          "Task Handling"
+        ],
+        "parentOpdId": "SD",
+        "parentOpdName": "SD",
+        "childOpdIds": [],
+        "focalThingLabelInParent": "Task Handling"
+      },
+      "local": {
+        "version": 2,
+        "meta": {
+          "exportedAt": "2026-03-18T15:50:20.155248Z",
+          "tool": "opcloud-authoring-builder"
+        },
+        "nodes": [
+          {
+            "id": "6180ad27-0b8e-545a-bc5e-cebc414aae6a",
+            "type": "opm.Process",
+            "label": "Task Handling",
+            "position": {
+              "x": 300,
+              "y": 300
+            },
+            "size": {
+              "width": 525,
+              "height": 620
+            },
+            "essence": 1,
+            "affiliation": 0,
+            "embeddedIds": [
+              "519b7da4-aabe-56a2-8bfc-f10f34ca665c",
+              "2543242d-ef34-5b53-b575-cbdd30cf2747",
+              "d4044de2-650e-5951-83cb-e7e22d541d16",
+              "18ad90c7-0034-523b-b307-83fbdeb187d6",
+              "83bbb412-b6ec-5fda-bc88-c8f09f1409f3",
+              "8c5698fe-bc42-59bb-9a6b-9bd27b58c7ba",
+              "423e1a7f-17f8-51a4-b904-44a9d9cf8279"
+            ],
+            "embeddedThingIds": [
+              "519b7da4-aabe-56a2-8bfc-f10f34ca665c",
+              "2543242d-ef34-5b53-b575-cbdd30cf2747",
+              "d4044de2-650e-5951-83cb-e7e22d541d16",
+              "18ad90c7-0034-523b-b307-83fbdeb187d6",
+              "83bbb412-b6ec-5fda-bc88-c8f09f1409f3",
+              "8c5698fe-bc42-59bb-9a6b-9bd27b58c7ba",
+              "423e1a7f-17f8-51a4-b904-44a9d9cf8279"
+            ],
+            "isInZoomContainer": true
+          },
+          {
+            "id": "519b7da4-aabe-56a2-8bfc-f10f34ca665c",
+            "type": "opm.Process",
+            "label": "Context Building",
+            "position": {
+              "x": 505,
+              "y": 450
+            },
+            "size": {
+              "width": 135,
+              "height": 60
+            },
+            "parentId": "6180ad27-0b8e-545a-bc5e-cebc414aae6a",
+            "embeddedIds": [],
+            "embeddedThingIds": [],
+            "isInZoomContainer": false
+          },
+          {
+            "id": "2543242d-ef34-5b53-b575-cbdd30cf2747",
+            "type": "opm.Process",
+            "label": "Response Composing",
+            "position": {
+              "x": 505,
+              "y": 810
+            },
+            "size": {
+              "width": 135,
+              "height": 60
+            },
+            "parentId": "6180ad27-0b8e-545a-bc5e-cebc414aae6a",
+            "embeddedIds": [],
+            "embeddedThingIds": [],
+            "isInZoomContainer": false
+          },
+          {
+            "id": "190d75f8-a82b-5aaa-9b54-c0f07dfade1e",
+            "type": "opm.Object",
+            "label": "User Request",
+            "position": {
+              "x": 670,
+              "y": 200
+            },
+            "size": {
+              "width": 135,
+              "height": 60
+            },
+            "essence": 1,
+            "affiliation": 0,
+            "embeddedIds": [],
+            "embeddedThingIds": [],
+            "isInZoomContainer": false
+          },
+          {
+            "id": "a4b8b890-ae46-56a1-bb59-f2f3644be2b2",
+            "type": "opm.Object",
+            "label": "Response",
+            "position": {
+              "x": 600,
+              "y": 950
+            },
+            "size": {
+              "width": 135,
+              "height": 60
+            },
+            "essence": 1,
+            "affiliation": 0,
+            "embeddedIds": [],
+            "embeddedThingIds": [],
+            "isInZoomContainer": false
+          },
+          {
+            "id": "db7c4d64-a59f-5e52-baf0-cffd1b7c12db",
+            "type": "opm.Object",
+            "label": "Codex App",
+            "position": {
+              "x": 200,
+              "y": 100
+            },
+            "size": {
+              "width": 135,
+              "height": 60
+            },
+            "essence": 1,
+            "affiliation": 0,
+            "embeddedIds": [],
+            "embeddedThingIds": [],
+            "isInZoomContainer": false
+          },
+          {
+            "id": "10fb4e21-ce22-5683-8b13-59cb7179fb09",
+            "type": "opm.Object",
+            "label": "Workspace",
+            "position": {
+              "x": 355,
+              "y": 100
+            },
+            "size": {
+              "width": 135,
+              "height": 60
+            },
+            "essence": 1,
+            "affiliation": 0,
+            "embeddedIds": [],
+            "embeddedThingIds": [],
+            "isInZoomContainer": false
+          },
+          {
+            "id": "0b9b2817-3a1b-5ffd-9161-c46f14353733",
+            "type": "opm.Object",
+            "label": "Tooling Environment",
+            "position": {
+              "x": 510,
+              "y": 100
+            },
+            "size": {
+              "width": 135,
+              "height": 60
+            },
+            "essence": 1,
+            "affiliation": 0,
+            "embeddedIds": [],
+            "embeddedThingIds": [],
+            "isInZoomContainer": false
+          },
+          {
+            "id": "d4044de2-650e-5951-83cb-e7e22d541d16",
+            "type": "opm.Object",
+            "label": "Prompt Context",
+            "position": {
+              "x": 340,
+              "y": 510
+            },
+            "size": {
+              "width": 135,
+              "height": 60
+            },
+            "essence": 1,
+            "affiliation": 0,
+            "parentId": "6180ad27-0b8e-545a-bc5e-cebc414aae6a",
+            "embeddedIds": [],
+            "embeddedThingIds": [],
+            "isInZoomContainer": false
+          },
+          {
+            "id": "18ad90c7-0034-523b-b307-83fbdeb187d6",
+            "type": "opm.Object",
+            "label": "Plan",
+            "position": {
+              "x": 670,
+              "y": 630
+            },
+            "size": {
+              "width": 135,
+              "height": 60
+            },
+            "essence": 1,
+            "affiliation": 0,
+            "parentId": "6180ad27-0b8e-545a-bc5e-cebc414aae6a",
+            "embeddedIds": [],
+            "embeddedThingIds": [],
+            "isInZoomContainer": false
+          },
+          {
+            "id": "83bbb412-b6ec-5fda-bc88-c8f09f1409f3",
+            "type": "opm.Object",
+            "label": "Tool Results",
+            "position": {
+              "x": 340,
+              "y": 750
+            },
+            "size": {
+              "width": 135,
+              "height": 60
+            },
+            "essence": 1,
+            "affiliation": 0,
+            "parentId": "6180ad27-0b8e-545a-bc5e-cebc414aae6a",
+            "embeddedIds": [],
+            "embeddedThingIds": [],
+            "isInZoomContainer": false
+          },
+          {
+            "id": "8c5698fe-bc42-59bb-9a6b-9bd27b58c7ba",
+            "type": "opm.Process",
+            "label": "Reasoning",
+            "position": {
+              "x": 505,
+              "y": 570
+            },
+            "size": {
+              "width": 135,
+              "height": 60
+            },
+            "essence": 1,
+            "affiliation": 0,
+            "parentId": "6180ad27-0b8e-545a-bc5e-cebc414aae6a",
+            "embeddedIds": [],
+            "embeddedThingIds": [],
+            "isInZoomContainer": false
+          },
+          {
+            "id": "423e1a7f-17f8-51a4-b904-44a9d9cf8279",
+            "type": "opm.Process",
+            "label": "Tool Executing",
+            "position": {
+              "x": 505,
+              "y": 690
+            },
+            "size": {
+              "width": 135,
+              "height": 60
+            },
+            "essence": 1,
+            "affiliation": 0,
+            "parentId": "6180ad27-0b8e-545a-bc5e-cebc414aae6a",
+            "embeddedIds": [],
+            "embeddedThingIds": [],
+            "isInZoomContainer": false
+          }
+        ],
+        "statesByParent": {},
+        "proceduralLinks": [
+          {
+            "id": "f643de33-c4d7-53af-a501-8464e6c739d6",
+            "linkType": 2,
+            "sourceId": "190d75f8-a82b-5aaa-9b54-c0f07dfade1e",
+            "targetId": "519b7da4-aabe-56a2-8bfc-f10f34ca665c",
+            "geometry": {
+              "vertices": [],
+              "labels": []
+            }
+          },
+          {
+            "id": "92be7105-cc9b-5886-9b24-58bde4dd9e6d",
+            "linkType": 3,
+            "sourceId": "2543242d-ef34-5b53-b575-cbdd30cf2747",
+            "targetId": "a4b8b890-ae46-56a1-bb59-f2f3644be2b2",
+            "geometry": {
+              "vertices": [],
+              "labels": []
+            }
+          },
+          {
+            "id": "252ef0fa-1eb8-5a9d-85b2-007c8c0c86ee",
+            "linkType": 1,
+            "sourceId": "db7c4d64-a59f-5e52-baf0-cffd1b7c12db",
+            "targetId": "6180ad27-0b8e-545a-bc5e-cebc414aae6a",
+            "geometry": {
+              "vertices": [],
+              "labels": []
+            }
+          },
+          {
+            "id": "e9debf45-0054-556f-8dd9-8db00d004bb0",
+            "linkType": 1,
+            "sourceId": "10fb4e21-ce22-5683-8b13-59cb7179fb09",
+            "targetId": "6180ad27-0b8e-545a-bc5e-cebc414aae6a",
+            "geometry": {
+              "vertices": [],
+              "labels": []
+            }
+          },
+          {
+            "id": "ba950f55-9a85-5243-846d-b8faae4f0ea4",
+            "linkType": 1,
+            "sourceId": "0b9b2817-3a1b-5ffd-9161-c46f14353733",
+            "targetId": "6180ad27-0b8e-545a-bc5e-cebc414aae6a",
+            "geometry": {
+              "vertices": [],
+              "labels": []
+            }
+          },
+          {
+            "id": "6d8d87da-d85f-5e4f-a122-16304e02a5b1",
+            "linkType": 3,
+            "sourceId": "519b7da4-aabe-56a2-8bfc-f10f34ca665c",
+            "targetId": "d4044de2-650e-5951-83cb-e7e22d541d16",
+            "geometry": {
+              "vertices": [],
+              "labels": []
+            }
+          },
+          {
+            "id": "1663588e-bc7e-529d-bde6-22f9b166ba5b",
+            "linkType": 2,
+            "sourceId": "d4044de2-650e-5951-83cb-e7e22d541d16",
+            "targetId": "8c5698fe-bc42-59bb-9a6b-9bd27b58c7ba",
+            "geometry": {
+              "vertices": [],
+              "labels": []
+            }
+          },
+          {
+            "id": "3b8143d5-eb9a-5566-9d49-b6bdb16d5d63",
+            "linkType": 3,
+            "sourceId": "8c5698fe-bc42-59bb-9a6b-9bd27b58c7ba",
+            "targetId": "18ad90c7-0034-523b-b307-83fbdeb187d6",
+            "geometry": {
+              "vertices": [],
+              "labels": []
+            }
+          },
+          {
+            "id": "56d9c6e0-ee03-53ad-8d43-c84887a4e8dc",
+            "linkType": 2,
+            "sourceId": "18ad90c7-0034-523b-b307-83fbdeb187d6",
+            "targetId": "423e1a7f-17f8-51a4-b904-44a9d9cf8279",
+            "geometry": {
+              "vertices": [],
+              "labels": []
+            }
+          },
+          {
+            "id": "a4693642-0e48-5932-b4da-92049194aebe",
+            "linkType": 3,
+            "sourceId": "423e1a7f-17f8-51a4-b904-44a9d9cf8279",
+            "targetId": "83bbb412-b6ec-5fda-bc88-c8f09f1409f3",
+            "geometry": {
+              "vertices": [],
+              "labels": []
+            }
+          },
+          {
+            "id": "a6c042af-55e4-50f0-87ed-b61b51ef429d",
+            "linkType": 2,
+            "sourceId": "83bbb412-b6ec-5fda-bc88-c8f09f1409f3",
+            "targetId": "2543242d-ef34-5b53-b575-cbdd30cf2747",
+            "geometry": {
+              "vertices": [],
+              "labels": []
+            }
+          }
+        ],
+        "fundamentalGroups": [],
+        "leftovers": []
+      }
+    },
+    {
+      "hierarchy": {
+        "opdId": "a6a96c2d-fd0e-5628-b9f8-b5b44577e70f",
+        "opdName": "Codex App",
+        "opdPath": [
+          "SD",
+          "Codex App"
+        ],
+        "parentOpdId": "SD",
+        "parentOpdName": "SD",
+        "childOpdIds": [
+          "2b20a633-61c9-5da1-960f-8daf252f7517"
+        ],
+        "focalThingLabelInParent": "Codex App"
+      },
+      "local": {
+        "version": 2,
+        "meta": {
+          "exportedAt": "2026-03-18T15:50:20.155386Z",
+          "tool": "opcloud-authoring-builder"
+        },
+        "nodes": [
+          {
+            "id": "13f8964b-2d3c-5e7b-916a-9c8729628433",
+            "type": "opm.Object",
+            "label": "Codex App",
+            "position": {
+              "x": 270,
+              "y": 200
+            },
+            "size": {
+              "width": 135,
+              "height": 60
+            },
+            "essence": 1,
+            "affiliation": 0,
+            "embeddedIds": [],
+            "embeddedThingIds": [],
+            "isInZoomContainer": false
+          },
+          {
+            "id": "a3f99ec4-1eaf-5de4-9885-4830a2cc8a0e",
+            "type": "opm.Process",
+            "label": "Task Handling",
+            "position": {
+              "x": 270,
+              "y": 100
+            },
+            "size": {
+              "width": 135,
+              "height": 60
+            },
+            "essence": 1,
+            "affiliation": 0,
+            "embeddedIds": [],
+            "embeddedThingIds": [],
+            "isInZoomContainer": false
+          },
+          {
+            "id": "e1a32542-539e-5d02-b3a2-b5ae2f53393b",
+            "type": "opm.Object",
+            "label": "Conversation UI",
+            "position": {
+              "x": 0,
+              "y": 300
+            },
+            "size": {
+              "width": 135,
+              "height": 60
+            },
+            "essence": 1,
+            "affiliation": 0,
+            "embeddedIds": [],
+            "embeddedThingIds": [],
+            "isInZoomContainer": false
+          },
+          {
+            "id": "779690cf-dfea-52d8-b3cc-654c47f36236",
+            "type": "opm.Object",
+            "label": "Model Runtime",
+            "position": {
+              "x": 180,
+              "y": 300
+            },
+            "size": {
+              "width": 135,
+              "height": 60
+            },
+            "essence": 1,
+            "affiliation": 0,
+            "embeddedIds": [],
+            "embeddedThingIds": [],
+            "isInZoomContainer": false
+          },
+          {
+            "id": "99f09bd4-76dd-5d67-897b-51887acbb18d",
+            "type": "opm.Object",
+            "label": "Tool Orchestrator",
+            "position": {
+              "x": 180,
+              "y": 400
+            },
+            "size": {
+              "width": 135,
+              "height": 60
+            },
+            "essence": 1,
+            "affiliation": 0,
+            "embeddedIds": [],
+            "embeddedThingIds": [],
+            "isInZoomContainer": false
+          },
+          {
+            "id": "9d8b996f-51dc-57c0-9341-7343de9a3bca",
+            "type": "opm.Object",
+            "label": "File Editor",
+            "position": {
+              "x": 0,
+              "y": 400
+            },
+            "size": {
+              "width": 135,
+              "height": 60
+            },
+            "essence": 1,
+            "affiliation": 0,
+            "embeddedIds": [],
+            "embeddedThingIds": [],
+            "isInZoomContainer": false
+          },
+          {
+            "id": "1b89cdd8-4a87-5c94-a3a3-41ef33c22597",
+            "type": "opm.Object",
+            "label": "Terminal Bridge",
+            "position": {
+              "x": 90,
+              "y": 500
+            },
+            "size": {
+              "width": 135,
+              "height": 60
+            },
+            "essence": 1,
+            "affiliation": 0,
+            "embeddedIds": [],
+            "embeddedThingIds": [],
+            "isInZoomContainer": false
+          },
+          {
+            "id": "26607588-04b6-5090-b6df-62a0f4caa4b1",
+            "type": "opm.Object",
+            "label": "Conversation Thread",
+            "position": {
+              "x": 540,
+              "y": 300
+            },
+            "size": {
+              "width": 135,
+              "height": 60
+            },
+            "essence": 1,
+            "affiliation": 0,
+            "embeddedIds": [],
+            "embeddedThingIds": [],
+            "isInZoomContainer": false
+          },
+          {
+            "id": "c70e6d7b-0e23-563c-a9af-e60736c43b80",
+            "type": "opm.Object",
+            "label": "Current Plan",
+            "position": {
+              "x": 450,
+              "y": 400
+            },
+            "size": {
+              "width": 135,
+              "height": 60
+            },
+            "essence": 1,
+            "affiliation": 0,
+            "embeddedIds": [],
+            "embeddedThingIds": [],
+            "isInZoomContainer": false
+          },
+          {
+            "id": "2eb31cde-c441-5c9a-b341-2b67ab688647",
+            "type": "opm.Object",
+            "label": "Diff Preview",
+            "position": {
+              "x": 360,
+              "y": 300
+            },
+            "size": {
+              "width": 135,
+              "height": 60
+            },
+            "essence": 1,
+            "affiliation": 0,
+            "embeddedIds": [],
+            "embeddedThingIds": [],
+            "isInZoomContainer": false
+          }
+        ],
+        "statesByParent": {},
+        "proceduralLinks": [
+          {
+            "id": "8ce7cf64-3611-5743-acd8-6bfdc417c25a",
+            "linkType": 1,
+            "sourceId": "13f8964b-2d3c-5e7b-916a-9c8729628433",
+            "targetId": "a3f99ec4-1eaf-5de4-9885-4830a2cc8a0e",
+            "geometry": {
+              "vertices": [],
+              "labels": []
+            }
+          }
+        ],
+        "fundamentalGroups": [
+          {
+            "triangleId": "e04980bd-6ec6-5a62-b35f-31aaade67009",
+            "triangleGeometry": {
+              "position": {
+                "x": 142,
+                "y": 241
+              },
+              "size": {
+                "width": 30,
+                "height": 25
+              },
+              "angle": 0
+            },
+            "ownerId": "13f8964b-2d3c-5e7b-916a-9c8729628433",
+            "groupType": 11,
+            "ownerLink": {
+              "id": "a09732db-35e2-58bd-b501-e9ca9ebd5252",
+              "geometry": {
+                "vertices": [],
+                "labels": []
+              }
+            },
+            "memberIds": [
+              "e1a32542-539e-5d02-b3a2-b5ae2f53393b",
+              "779690cf-dfea-52d8-b3cc-654c47f36236",
+              "99f09bd4-76dd-5d67-897b-51887acbb18d",
+              "9d8b996f-51dc-57c0-9341-7343de9a3bca",
+              "1b89cdd8-4a87-5c94-a3a3-41ef33c22597"
+            ],
+            "memberLinks": [
+              {
+                "id": "9de52eef-668f-5785-9270-482976a32d20",
+                "linkType": 11,
+                "targetId": "e1a32542-539e-5d02-b3a2-b5ae2f53393b",
+                "geometry": {
+                  "vertices": [],
+                  "labels": []
+                }
+              },
+              {
+                "id": "792eb6be-8ced-5bb0-baa0-e11daff6ae5b",
+                "linkType": 11,
+                "targetId": "779690cf-dfea-52d8-b3cc-654c47f36236",
+                "geometry": {
+                  "vertices": [],
+                  "labels": []
+                }
+              },
+              {
+                "id": "62d7be3c-7e68-514d-ad2d-b9e0aadb0118",
+                "linkType": 11,
+                "targetId": "99f09bd4-76dd-5d67-897b-51887acbb18d",
+                "geometry": {
+                  "vertices": [],
+                  "labels": []
+                }
+              },
+              {
+                "id": "4cf7ba66-81a1-5778-af3e-b479efd636f5",
+                "linkType": 11,
+                "targetId": "9d8b996f-51dc-57c0-9341-7343de9a3bca",
+                "geometry": {
+                  "vertices": [],
+                  "labels": []
+                }
+              },
+              {
+                "id": "feaaa647-b4cf-5cb6-a172-7677bee890ac",
+                "linkType": 11,
+                "targetId": "1b89cdd8-4a87-5c94-a3a3-41ef33c22597",
+                "geometry": {
+                  "vertices": [],
+                  "labels": []
+                }
+              }
+            ]
+          },
+          {
+            "triangleId": "47090541-d2b9-5486-af21-94e25e3567cb",
+            "triangleGeometry": {
+              "position": {
+                "x": 503,
+                "y": 241
+              },
+              "size": {
+                "width": 30,
+                "height": 25
+              },
+              "angle": 0
+            },
+            "ownerId": "13f8964b-2d3c-5e7b-916a-9c8729628433",
+            "groupType": 12,
+            "ownerLink": {
+              "id": "703b2967-ca0a-54fc-82fa-55734b40e734",
+              "geometry": {
+                "vertices": [],
+                "labels": []
+              }
+            },
+            "memberIds": [
+              "26607588-04b6-5090-b6df-62a0f4caa4b1",
+              "c70e6d7b-0e23-563c-a9af-e60736c43b80",
+              "2eb31cde-c441-5c9a-b341-2b67ab688647"
+            ],
+            "memberLinks": [
+              {
+                "id": "de4df48b-b937-5eb0-89b6-8f3259c8868e",
+                "linkType": 12,
+                "targetId": "26607588-04b6-5090-b6df-62a0f4caa4b1",
+                "geometry": {
+                  "vertices": [],
+                  "labels": []
+                }
+              },
+              {
+                "id": "6f26a613-c024-50e2-ad18-d5d26e70c7a9",
+                "linkType": 12,
+                "targetId": "c70e6d7b-0e23-563c-a9af-e60736c43b80",
+                "geometry": {
+                  "vertices": [],
+                  "labels": []
+                }
+              },
+              {
+                "id": "747d8a9f-4727-5bdd-aeac-aeb70a8fd62c",
+                "linkType": 12,
+                "targetId": "2eb31cde-c441-5c9a-b341-2b67ab688647",
+                "geometry": {
+                  "vertices": [],
+                  "labels": []
+                }
+              }
+            ]
+          }
+        ],
+        "leftovers": []
+      }
+    },
+    {
+      "hierarchy": {
+        "opdId": "2b20a633-61c9-5da1-960f-8daf252f7517",
+        "opdName": "Tool Orchestrator",
+        "opdPath": [
+          "SD",
+          "Codex App",
+          "Tool Orchestrator"
+        ],
+        "parentOpdId": "a6a96c2d-fd0e-5628-b9f8-b5b44577e70f",
+        "parentOpdName": "Codex App",
+        "childOpdIds": [],
+        "focalThingLabelInParent": "Tool Orchestrator"
+      },
+      "local": {
+        "version": 2,
+        "meta": {
+          "exportedAt": "2026-03-18T15:50:20.155486Z",
+          "tool": "opcloud-authoring-builder"
+        },
+        "nodes": [
+          {
+            "id": "53b2f922-66b4-5f3d-8f50-5cdc5b697ddb",
+            "type": "opm.Object",
+            "label": "Tool Orchestrator",
+            "position": {
+              "x": 250,
+              "y": 180
+            },
+            "size": {
+              "width": 135,
+              "height": 60
+            },
+            "essence": 1,
+            "affiliation": 0,
+            "embeddedIds": [],
+            "embeddedThingIds": [],
+            "isInZoomContainer": false
+          },
+          {
+            "id": "7d4bc9e8-5eef-5d07-ac44-040d6da888b7",
+            "type": "opm.Object",
+            "label": "Codex App",
+            "position": {
+              "x": 250,
+              "y": 50
+            },
+            "size": {
+              "width": 135,
+              "height": 60
+            },
+            "essence": 1,
+            "affiliation": 0,
+            "embeddedIds": [],
+            "embeddedThingIds": [],
+            "isInZoomContainer": false
+          },
+          {
+            "id": "cc2c12bf-3863-5385-b42a-4c6e6a96fb2c",
+            "type": "opm.Object",
+            "label": "Shell Runner",
+            "position": {
+              "x": 150,
+              "y": 300
+            },
+            "size": {
+              "width": 135,
+              "height": 60
+            },
+            "essence": 1,
+            "affiliation": 0,
+            "embeddedIds": [],
+            "embeddedThingIds": [],
+            "isInZoomContainer": false
+          },
+          {
+            "id": "ff5145a9-9253-5aa7-9eb9-3f41dd0ee008",
+            "type": "opm.Object",
+            "label": "File Patcher",
+            "position": {
+              "x": 350,
+              "y": 400
+            },
+            "size": {
+              "width": 135,
+              "height": 60
+            },
+            "essence": 1,
+            "affiliation": 0,
+            "embeddedIds": [],
+            "embeddedThingIds": [],
+            "isInZoomContainer": false
+          },
+          {
+            "id": "95ad9b01-5330-535c-a3c6-d6fb44303e55",
+            "type": "opm.Object",
+            "label": "Resource Reader",
+            "position": {
+              "x": 150,
+              "y": 400
+            },
+            "size": {
+              "width": 135,
+              "height": 60
+            },
+            "essence": 1,
+            "affiliation": 0,
+            "embeddedIds": [],
+            "embeddedThingIds": [],
+            "isInZoomContainer": false
+          },
+          {
+            "id": "ead08733-f98a-5318-a325-108e57296081",
+            "type": "opm.Object",
+            "label": "Test Runner",
+            "position": {
+              "x": 350,
+              "y": 300
+            },
+            "size": {
+              "width": 135,
+              "height": 60
+            },
+            "essence": 1,
+            "affiliation": 0,
+            "embeddedIds": [],
+            "embeddedThingIds": [],
+            "isInZoomContainer": false
+          }
+        ],
+        "statesByParent": {},
+        "proceduralLinks": [],
+        "fundamentalGroups": [
+          {
+            "triangleId": "b1a3475e-095e-5bc5-851e-f3c51bf3806d",
+            "triangleGeometry": {
+              "position": {
+                "x": 303,
+                "y": 131
+              },
+              "size": {
+                "width": 30,
+                "height": 25
+              }
+            },
+            "ownerId": "7d4bc9e8-5eef-5d07-ac44-040d6da888b7",
+            "groupType": 11,
+            "ownerLink": {
+              "id": "614f90e9-e404-524f-a63f-555935ca4503",
+              "geometry": {
+                "vertices": [],
+                "labels": []
+              }
+            },
+            "memberIds": [
+              "53b2f922-66b4-5f3d-8f50-5cdc5b697ddb"
+            ],
+            "memberLinks": [
+              {
+                "id": "6676163e-3a1b-5d36-bcfb-3ae2774bc9c2",
+                "linkType": 11,
+                "targetId": "53b2f922-66b4-5f3d-8f50-5cdc5b697ddb",
+                "geometry": {
+                  "vertices": [],
+                  "labels": []
+                }
+              }
+            ]
+          },
+          {
+            "triangleId": "5ce8d27e-be77-50bc-9d6d-e1258d0f2551",
+            "triangleGeometry": {
+              "position": {
+                "x": 303,
+                "y": 267
+              },
+              "size": {
+                "width": 30,
+                "height": 25
+              },
+              "angle": 0
+            },
+            "ownerId": "53b2f922-66b4-5f3d-8f50-5cdc5b697ddb",
+            "groupType": 11,
+            "ownerLink": {
+              "id": "1ff0df50-d2a8-553a-b88f-66d40833f7a7",
+              "geometry": {
+                "vertices": [],
+                "labels": []
+              }
+            },
+            "memberIds": [
+              "cc2c12bf-3863-5385-b42a-4c6e6a96fb2c",
+              "ff5145a9-9253-5aa7-9eb9-3f41dd0ee008",
+              "95ad9b01-5330-535c-a3c6-d6fb44303e55",
+              "ead08733-f98a-5318-a325-108e57296081"
+            ],
+            "memberLinks": [
+              {
+                "id": "d341d1ab-ba99-5433-b8e7-1abd29913aa2",
+                "linkType": 11,
+                "targetId": "cc2c12bf-3863-5385-b42a-4c6e6a96fb2c",
+                "geometry": {
+                  "vertices": [],
+                  "labels": []
+                }
+              },
+              {
+                "id": "975f2bc4-b818-573d-9508-00bcfcd16738",
+                "linkType": 11,
+                "targetId": "ff5145a9-9253-5aa7-9eb9-3f41dd0ee008",
+                "geometry": {
+                  "vertices": [],
+                  "labels": []
+                }
+              },
+              {
+                "id": "0d6917d4-4d82-53d6-8e11-4eb8d3baed26",
+                "linkType": 11,
+                "targetId": "95ad9b01-5330-535c-a3c6-d6fb44303e55",
+                "geometry": {
+                  "vertices": [],
+                  "labels": []
+                }
+              },
+              {
+                "id": "8238ba77-e34b-50f0-a843-455f846fc802",
+                "linkType": 11,
+                "targetId": "ead08733-f98a-5318-a325-108e57296081",
+                "geometry": {
+                  "vertices": [],
+                  "labels": []
+                }
+              }
+            ]
+          }
+        ],
+        "leftovers": []
+      }
+    }
+  ]
+}

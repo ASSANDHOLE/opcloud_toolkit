@@ -20,8 +20,50 @@ This project works around that by interacting with the real OPCloud runtime in t
 
 ## Repository Layout
 
-- [`test/toolkit.js`](test/toolkit.js): current toolkit source
+- [`test/toolkit.js`](tmp/test/toolkit.js): current toolkit source
 - [`chrome_extension`](chrome_extension): Chrome extension wrapper for the toolkit
+- [`python_opd_builder`](python_opd_builder): reusable Python OPD builder and conversion package
+- [`scripts`](scripts): one simple and one complex builder example
+
+## Python OPD Builder
+
+The reusable Python code lives under [`python_opd_builder`](python_opd_builder):
+
+- [`python_opd_builder/authoring.py`](python_opd_builder/authoring.py): author OPDs from Python
+- [`python_opd_builder/export_to_authoring.py`](python_opd_builder/export_to_authoring.py): convert OPCloud exports into the authoring format
+- [`python_opd_builder/build_importable.py`](python_opd_builder/build_importable.py): compile authoring JSON into OPCloud-importable JSON
+- [`python_opd_builder/AUTHORING_FORMAT.md`](python_opd_builder/AUTHORING_FORMAT.md): authoring JSON format reference
+
+How it works:
+
+1. Create an `AuthoringProject()`
+2. Get the default root OPD with `project.get_sd()`
+3. Add objects, processes, states, links, unfolds, and in-zooms with the builder API
+4. Save authoring JSON, or compile it into OPCloud-importable JSON
+
+Typical usage:
+
+```python
+from python_opd_builder.authoring import AuthoringProject, LinkType, opmObj, opmProc
+
+project = AuthoringProject()
+sd = project.get_sd()
+
+customer = opmObj("Customer", key="customer")
+customer.updateState("Interested", "Verified")
+sd.addObject(customer)
+
+checkout = opmProc("Checkout", key="checkout")
+sd.addProcess(checkout)
+sd.addLink(LinkType.CONSUMPTION, customer.ref("verified"), checkout)
+```
+
+Example scripts:
+
+- [`scripts/build_example_opd.py`](scripts/build_example_opd.py): simple example
+- [`scripts/build_complex_opd.py`](scripts/build_complex_opd.py): complex placeholder with multiple actions
+
+You can see the generated files in [`example_exports`](example_exports).
 
 ## Chrome Extension
 
@@ -69,6 +111,9 @@ To load the extension locally:
 2. Enable Developer mode
 3. Click `Load unpacked`
 4. Select the [`chrome_extension`](chrome_extension) folder
+
+The unpacked extension now includes an icon, so Chrome should show a proper logo
+in the extensions page and toolbar when loaded from source.
 
 ## Publishing Notes
 

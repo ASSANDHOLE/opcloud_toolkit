@@ -2378,510 +2378,6 @@
         return exportData;
     }
 
-    async function importOpdData(data, {cleanupBefore = false} = {}) {
-        function assert(cond, msg) {
-            if (!cond) throw new Error(msg);
-        }
-
-        function isObjectNode(n) {
-            return n?.type === "opm.Object";
-        }
-
-        function isProcessNode(n) {
-            return n?.type === "opm.Process";
-        }
-
-        function stateArraysOf(x) {
-            return Object.entries(x.statesByParent || {});
-        }
-
-        function summarizeModel(m) {
-            return {
-                id: getIdFromModel(m),
-                type: getNodeType(m),
-                label: getLabelFromModel(m),
-                position: getPositionFromModel(m)
-            };
-        }
-
-        function isSelfInvocationExportedLink(link) {
-            if (!link) return false;
-            if (link.linkType === 5) return true;
-            const ctor = String(link.ctor || "");
-            return /SelfInvocation/i.test(ctor);
-        }
-
-        function isSelfInvocationRuntimeLink(link) {
-            if (!link) return false;
-            const ctor = String(link?.constructor?.name || "");
-            const logicalType = link?.logicalElement?.linkType ?? null;
-            const j = link?.toJSON?.() || {};
-            const sid = j?.source?.id ?? null;
-            const tid = j?.target?.id ?? null;
-            return logicalType === 5 || /SelfInvocation/i.test(ctor) || (!!sid && sid === tid);
-        }
-
-        function getCellById(id) {
-            return getCurrentGraphCells().find(c => getIdFromModel(c) === id) || null;
-        }
-
-        function refreshLinksByIds(linkIds) {
-            const init = BOOT.capturedUiSeed.init;
-            const links = linkIds.map(id => getCellById(id)).filter(Boolean);
-            try {
-                init?.graphService?.updateLinksView?.(links);
-            } catch {
-            }
-            return links;
-        }
-
-        function buildNodeRefFromModel(model) {
-            const refreshed = refreshModelRef(model) || model;
-            return {
-                kind: "node",
-                nodeType: getNodeType(refreshed),
-                label: getLabelFromModel(refreshed)
-            };
-        }
-
-        function buildStateRef(parentModelOrLabel, stateLabel) {
-            const parentLabel = typeof parentModelOrLabel === "string"
-                ? parentModelOrLabel
-                : getLabelFromModel(refreshModelRef(parentModelOrLabel) || parentModelOrLabel);
-            return {
-                kind: "state",
-                parentLabel,
-                label: stateLabel
-            };
-        }
-
-        function resolveRuntimeRef(ref) {
-            if (!ref) return null;
-            if (ref.kind === "node") {
-                return findCurrentNodeByTypeAndLabel(ref.nodeType, ref.label) || null;
-            }
-            if (ref.kind === "state") {
-                return findCurrentStateByParentLabelAndLabel(ref.parentLabel, ref.label) || null;
-            }
-            return null;
-        }
-
-        function buildLinkParamsFromProceduralLink(link) {
-            return {
-                type: link.linkType,
-                connection: 0,
-                isCondition: false,
-                isEvent: false,
-                isNegation: false
-            };
-        }
-
-        function buildLinkParamsFromFundamentalMember(memberLink) {
-            return {
-                type: memberLink.linkType,
-                connection: 0,
-                isCondition: false,
-                isEvent: false,
-                isNegation: false
-            };
-        }
-
-        async function applyNodeGeometry(model, exportedNode) {
-            const refreshed = refreshModelRef(model) || model;
-            const p = exportedNode?.position;
-            if (p && typeof p.x === "number" && typeof p.y === "number") {
-                const hasChildren = getEmbeddedThingChildren(refreshed, {deep: true}).length > 0;
-                if (hasChildren) {
-                    moveAndKeepChildrenPositionByPosition(refreshed, p.x, p.y);
-                } else {
-                    refreshed.position(p.x, p.y, {});
-                }
-            }
-            return {
-                runtimeId: getIdFromModel(refreshed),
-                applied: !!p
-            };
-        }
-
-        async function applyStateGeometry(runtimeStateModel, exportedState) {
-            return {
-                exportedId: exportedState.id,
-                runtimeId: getIdFromModel(runtimeStateModel),
-                skipped: true
-            };
-        }
-
-        async function applyLinkGeometry(runtimeLinkId, exportedGeometry, exportedLink = null) {
-            const link = runtimeLinkId ? getCellById(runtimeLinkId) : null;
-            const vertices = Array.isArray(exportedGeometry?.vertices) ? exportedGeometry.vertices : [];
-
-            if (!link) {
-                return {
-                    runtimeId: runtimeLinkId ?? null,
-                    applied: false,
-                    reason: "runtime link not found",
-                    verticesCount: vertices.length
-                };
-            }
-
-            if (isSelfInvocationExportedLink(exportedLink) || isSelfInvocationRuntimeLink(link)) {
-                return {
-                    runtimeId: runtimeLinkId,
-                    applied: false,
-                    skipped: true,
-                    reason: "self-invocation geometry replay skipped",
-                    verticesCount: vertices.length,
-                    ctor: link?.constructor?.name ?? null,
-                    linkType: link?.logicalElement?.linkType ?? null
-                };
-            }
-
-            if (typeof link.vertices === "function") {
-                link.vertices(vertices);
-            } else {
-                link.set("vertices", vertices);
-            }
-            refreshLinksByIds([runtimeLinkId]);
-
-            return {
-                runtimeId: runtimeLinkId,
-                applied: true,
-                verticesCount: vertices.length,
-                hasLabels: !!(exportedGeometry?.labels?.length),
-                hasRawSource: !!exportedGeometry?.rawSource,
-                hasRawTarget: !!exportedGeometry?.rawTarget
-            };
-        }
-
-        async function applyTriangleGeometry(runtimeTriangleId, triangleGeometry, affectedLinkIds = []) {
-            const triangle = runtimeTriangleId ? getCellById(runtimeTriangleId) : null;
-            const p = triangleGeometry?.position;
-            if (!triangle) {
-                return {
-                    runtimeId: runtimeTriangleId ?? null,
-                    applied: false,
-                    reason: "runtime triangle not found"
-                };
-            }
-
-            if (p && typeof p.x === "number" && typeof p.y === "number") {
-                triangle.position(p.x, p.y);
-            }
-            refreshLinksByIds(affectedLinkIds);
-
-            return {
-                runtimeId: runtimeTriangleId,
-                applied: !!p,
-                position: p || null,
-                affectedLinkIds
-            };
-        }
-
-        async function ensureRuntimeInZoomForExportedNode(exportedNode, oldIdToRuntimeRef) {
-            const shouldInZoom = !!(
-                exportedNode && (
-                    exportedNode.isInZoomContainer === true ||
-                    (Array.isArray(exportedNode.embeddedThingIds) && exportedNode.embeddedThingIds.length > 0)
-                )
-            );
-            if (!shouldInZoom) {
-                return resolveRuntimeRef(oldIdToRuntimeRef.get(exportedNode?.id));
-            }
-            let runtimeModel = resolveRuntimeRef(oldIdToRuntimeRef.get(exportedNode.id));
-            if (!runtimeModel) return null;
-            runtimeModel = refreshModelRef(runtimeModel) || runtimeModel;
-            const runtimeEmbeddedThingCount = getEmbeddedThingChildren(runtimeModel, {deep: false})
-                .filter(c => {
-                    const t = getNodeType(c);
-                    return t === "opm.Object" || t === "opm.Process";
-                }).length;
-            if (runtimeEmbeddedThingCount === 0) {
-                runtimeModel = await inzoomTargetAio(runtimeModel);
-                runtimeModel = refreshModelRef(runtimeModel) || runtimeModel;
-                oldIdToRuntimeRef.set(exportedNode.id, buildNodeRefFromModel(runtimeModel));
-            }
-            return runtimeModel;
-        }
-
-        async function createRuntimeNodeFromExported(node, parentModel = null) {
-            const args = {
-                label: node.label,
-                x: node.position?.x,
-                y: node.position?.y,
-                ...(parentModel ? {parent: parentModel} : {})
-            };
-            let model;
-            if (isObjectNode(node)) {
-                model = await addObjectAio(args);
-            } else if (isProcessNode(node)) {
-                model = await addProcessAio(args);
-            } else {
-                throw new Error(`Unsupported node type: ${node.type}`);
-            }
-            return refreshModelRef(model) || model;
-        }
-
-        assert(data && typeof data === "object", "data object required");
-        assert(Array.isArray(data.nodes), "data.nodes must be an array");
-
-        await bootstrapRuntimeOnce();
-
-        if (cleanupBefore) {
-            await cleanupSingleBoot();
-        }
-
-        const oldIdToRuntimeRef = new Map();
-        const oldStateIdToRuntimeRef = new Map();
-        const exportedNodes = Array.isArray(data.nodes) ? data.nodes.slice() : [];
-        const topLevelNodes = exportedNodes.filter(n => !n?.parentId);
-        const embeddedNodes = exportedNodes.filter(n => !!n?.parentId);
-        const exportedNodeById = new Map(exportedNodes.map(n => [n.id, n]));
-
-        const reports = {
-            createdNodes: [],
-            createdStates: [],
-            essenceApplied: [],
-            proceduralLinks: [],
-            fundamentalGroups: [],
-            deferredGeometry: {
-                node: [],
-                state: [],
-                link: [],
-                triangle: []
-            }
-        };
-
-        for (const node of topLevelNodes) {
-            const model = await createRuntimeNodeFromExported(node, null);
-            oldIdToRuntimeRef.set(node.id, buildNodeRefFromModel(model));
-            reports.createdNodes.push({
-                exported: node,
-                runtime: summarizeModel(model)
-            });
-        }
-
-        for (const node of topLevelNodes) {
-            await ensureRuntimeInZoomForExportedNode(node, oldIdToRuntimeRef);
-        }
-
-        const pendingEmbedded = embeddedNodes.slice();
-        while (pendingEmbedded.length) {
-            let progressed = false;
-            for (let i = 0; i < pendingEmbedded.length; i++) {
-                const node = pendingEmbedded[i];
-                const parentExported = exportedNodeById.get(node.parentId) || null;
-                if (!parentExported) {
-                    throw new Error(`Missing exported parent node for embedded node ${node.label}`);
-                }
-                let parentModel = resolveRuntimeRef(oldIdToRuntimeRef.get(node.parentId));
-                if (!parentModel) continue;
-                parentModel = await ensureRuntimeInZoomForExportedNode(parentExported, oldIdToRuntimeRef);
-                if (!parentModel) continue;
-
-                const model = await createRuntimeNodeFromExported(node, parentModel);
-                oldIdToRuntimeRef.set(node.id, buildNodeRefFromModel(model));
-                reports.createdNodes.push({
-                    exported: node,
-                    runtime: summarizeModel(model)
-                });
-                pendingEmbedded.splice(i, 1);
-                i -= 1;
-                progressed = true;
-            }
-            if (!progressed) {
-                throw new Error(`Could not resolve parent/inzoom chain for embedded nodes: ${pendingEmbedded.map(n => n.label).join(", ")}`);
-            }
-        }
-
-        for (const node of exportedNodes) {
-            const runtimeModel = resolveRuntimeRef(oldIdToRuntimeRef.get(node.id));
-            if (!runtimeModel) continue;
-            reports.deferredGeometry.node.push(
-                await applyNodeGeometry(runtimeModel, node)
-            );
-        }
-
-        for (const [oldParentId, exportedStates] of stateArraysOf(data)) {
-            const parentRef = oldIdToRuntimeRef.get(oldParentId);
-            const parentModel = resolveRuntimeRef(parentRef);
-            if (!parentModel) {
-                throw new Error(`Parent model not found for states: ${oldParentId}`);
-            }
-
-            if (!Array.isArray(exportedStates) || !exportedStates.length) continue;
-
-            const labels = exportedStates.map(s => s.label);
-            await updateStatesAio(parentModel, labels, {
-                removeType: 1,
-                deleteDelayMs: 0,
-                preferDirectRemove: true
-            });
-
-            const refreshedParent = refreshModelRef(parentModel) || parentModel;
-            if (getNodeType(refreshedParent) === "opm.Object") {
-                try {
-                    fitObjectToEmbeddedStatesWithDefaults(refreshedParent);
-                } catch {
-                }
-            }
-            const runtimeStates = getStatesByVisualOrder(refreshedParent);
-            if (runtimeStates.length !== exportedStates.length) {
-                throw new Error(
-                    `State count mismatch for ${getLabelFromModel(refreshedParent)}: runtime=${runtimeStates.length}, exported=${exportedStates.length}`
-                );
-            }
-
-            for (let i = 0; i < exportedStates.length; i++) {
-                const exportedState = exportedStates[i];
-                const runtimeState = runtimeStates[i];
-                oldStateIdToRuntimeRef.set(exportedState.id, buildStateRef(refreshedParent, exportedState.label));
-                reports.createdStates.push({
-                    exported: exportedState,
-                    runtime: summarizeModel(runtimeState)
-                });
-
-                reports.deferredGeometry.state.push(
-                    await applyStateGeometry(runtimeState, exportedState)
-                );
-            }
-        }
-
-        for (const node of exportedNodes) {
-            const runtimeModel = resolveRuntimeRef(oldIdToRuntimeRef.get(node.id));
-            if (!runtimeModel) continue;
-
-            if (typeof node.essence === "number" && typeof node.affiliation === "number") {
-                const rep = await setEssenceAio(runtimeModel, {
-                    essence: node.essence,
-                    affiliation: node.affiliation
-                });
-                reports.essenceApplied.push(rep);
-            }
-        }
-
-        for (const link of data.proceduralLinks || []) {
-            const source = resolveRuntimeRef(oldIdToRuntimeRef.get(link.sourceId) || oldStateIdToRuntimeRef.get(link.sourceId));
-            const target = resolveRuntimeRef(oldIdToRuntimeRef.get(link.targetId) || oldStateIdToRuntimeRef.get(link.targetId));
-
-            if (!source || !target) {
-                throw new Error(`Missing procedural link endpoint(s) for link ${link.id}`);
-            }
-
-            const {created, report} = await addLinkAio(
-                source,
-                target,
-                buildLinkParamsFromProceduralLink(link)
-            );
-
-            reports.proceduralLinks.push({
-                exported: link,
-                runtime: report
-            });
-        }
-
-        for (const group of data.fundamentalGroups || []) {
-            const owner = resolveRuntimeRef(oldIdToRuntimeRef.get(group.ownerId) || oldStateIdToRuntimeRef.get(group.ownerId));
-
-            if (!owner) {
-                throw new Error(`Missing owner for fundamental group ${group.triangleId}`);
-            }
-
-            const groupReport = {
-                group,
-                createdMembers: [],
-                runtimeTriangleId: null,
-                runtimeOwnerLinkId: null
-            };
-
-            for (const memberLink of group.memberLinks || []) {
-                const target = resolveRuntimeRef(oldIdToRuntimeRef.get(memberLink.targetId) || oldStateIdToRuntimeRef.get(memberLink.targetId));
-
-                if (!target) {
-                    throw new Error(
-                        `Missing target for fundamental member link ${memberLink.id} in group ${group.triangleId}`
-                    );
-                }
-
-                const {created, report} = await addLinkAio(
-                    owner,
-                    target,
-                    buildLinkParamsFromFundamentalMember(memberLink)
-                );
-
-                groupReport.createdMembers.push({
-                    exported: memberLink,
-                    runtime: report,
-                    runtimeLinkId: created?.id ?? null
-                });
-            }
-
-            const currentGroups = inspectCurrentFundamentalGroups();
-            const ownerId = getIdFromModel(refreshModelRef(owner) || owner);
-            const memberTargetIds = new Set((group.memberLinks || []).map(x => {
-                const runtimeTarget = resolveRuntimeRef(oldIdToRuntimeRef.get(x.targetId) || oldStateIdToRuntimeRef.get(x.targetId));
-                return runtimeTarget ? getIdFromModel(runtimeTarget) : null;
-            }).filter(Boolean));
-            const runtimeGroup = currentGroups.find(g => {
-                const ownerLink = g?.ownerLink?.toJSON?.() || {};
-                const currentOwnerId = ownerLink?.source?.id ?? null;
-                if (currentOwnerId !== ownerId) return false;
-                const currentTargets = new Set((g.memberLinks || []).map(l => l?.toJSON?.()?.target?.id).filter(Boolean));
-                if (currentTargets.size !== memberTargetIds.size) return false;
-                for (const runtimeTargetId of memberTargetIds) {
-                    if (!currentTargets.has(runtimeTargetId)) return false;
-                }
-                return true;
-            }) || null;
-
-            groupReport.runtimeTriangleId = runtimeGroup?.triangleId ?? null;
-            groupReport.runtimeOwnerLinkId = runtimeGroup?.ownerLinkId ?? null;
-            reports.fundamentalGroups.push(groupReport);
-        }
-
-        for (const link of reports.proceduralLinks) {
-            reports.deferredGeometry.link.push(
-                await applyLinkGeometry(link.runtime.created.id, link.exported.geometry, link.exported)
-            );
-        }
-
-        for (const groupReport of reports.fundamentalGroups) {
-            const affected = [groupReport.runtimeOwnerLinkId, ...groupReport.createdMembers.map(x => x.runtimeLinkId)].filter(Boolean);
-            reports.deferredGeometry.triangle.push(
-                await applyTriangleGeometry(groupReport.runtimeTriangleId, groupReport.group.triangleGeometry, affected)
-            );
-
-            if (groupReport.group.ownerLink?.geometry) {
-                reports.deferredGeometry.link.push(
-                    await applyLinkGeometry(groupReport.runtimeOwnerLinkId, groupReport.group.ownerLink.geometry, groupReport.group.ownerLink)
-                );
-            }
-
-            for (const member of groupReport.createdMembers) {
-                reports.deferredGeometry.link.push(
-                    await applyLinkGeometry(member.runtimeLinkId, member.exported.geometry, member.exported)
-                );
-            }
-        }
-
-        const result = {
-            ok: true,
-            counts: {
-                nodes: reports.createdNodes.length,
-                states: reports.createdStates.length,
-                proceduralLinks: reports.proceduralLinks.length,
-                fundamentalGroups: reports.fundamentalGroups.length
-            },
-            idMaps: {
-                oldNodeIds: [...oldIdToRuntimeRef.keys()],
-                oldStateIds: [...oldStateIdToRuntimeRef.keys()]
-            },
-            reports
-        };
-
-        log("importOpdData", result.counts);
-        return result;
-    }
-
     async function importEntireOpdTreeAio(data, {
         unfoldDelayMs = 500,
         cleanupGeneratedLinks = true,
@@ -3143,8 +2639,13 @@
                         } else {
                             runtime.position(node.position.x, node.position.y, {});
                         }
-                    } catch {
-                    }
+                    } catch {}
+                }
+
+                if (node?.size && typeof node.size.width === "number" && typeof node.size.height === "number") {
+                    try {
+                        runtime.size(node.size.width, node.size.height, {});
+                    } catch {}
                 }
 
                 runtime = refreshModelRef(runtime) || runtime;
@@ -3212,8 +2713,13 @@
                             } else {
                                 model.position(node.position.x, node.position.y, {});
                             }
-                        } catch {
-                        }
+                        } catch {}
+                    }
+
+                    if (node?.size && typeof node.size.width === "number" && typeof node.size.height === "number") {
+                        try {
+                            runtime.size(node.size.width, node.size.height, {});
+                        } catch {}
                     }
 
                     runtimeRefsByExportedId.set(node.id, buildNodeRefFromModel(model));
@@ -3440,11 +2946,13 @@
                 if (!now?.id) {
                     throw new Error(`In-zoom did not leave importer on a current runtime OPD for ${focalLabel}`);
                 }
+                const deleted = await removeAutoScaffoldInCurrentOpd(childEntry);
                 return {
                     mode,
                     runtimeChildOpdId: now.id,
                     runtimeChildOpd: summarizeOpd(now),
                     report: rep,
+                    deletedAutoScaffold: deleted,
                     newlyCreated: false,
                     sameRuntimeOpdAsParent: !!(parentRuntimeOpd?.id && parentRuntimeOpd.id === now.id)
                 };
@@ -3483,14 +2991,14 @@
 
             const init = BOOT.capturedUiSeed.init;
             const getCellById = (id) => getCurrentGraphCells().find(c => getIdFromModel(c) === id) || null;
-            const refreshLinksByIds = (linkIds) => {
-                const links = linkIds.map(id => getCellById(id)).filter(Boolean);
-                try {
-                    init?.graphService?.updateLinksView?.(links);
-                } catch {
-                }
-                return links;
-            };
+            // const refreshLinksByIds = (linkIds) => {
+            //     const links = linkIds.map(id => getCellById(id)).filter(Boolean);
+            //     try {
+            //         init?.graphService?.updateLinksView?.(links);
+            //     } catch {
+            //     }
+            //     return links;
+            // };
             const isSelfInvocationExportedLink = (link) => {
                 if (!link) return false;
                 if (link.linkType === 5) return true;
@@ -3537,7 +3045,7 @@
                 } else {
                     link.set("vertices", vertices);
                 }
-                refreshLinksByIds([runtimeLinkId]);
+                // refreshLinksByIds([runtimeLinkId]);
                 return {runtimeId: runtimeLinkId, applied: true, verticesCount: vertices.length};
             };
             const applyTriangleGeometry = (runtimeTriangleId, triangleGeometry, affectedLinkIds = []) => {
@@ -3545,9 +3053,9 @@
                 const p = triangleGeometry?.position;
                 if (!triangle) return {runtimeId: runtimeTriangleId ?? null, applied: false};
                 if (p && typeof p.x === "number" && typeof p.y === "number") {
-                    triangle.position(p.x, p.y);
+                    triangle.position(p.x, p.y, {});
                 }
-                refreshLinksByIds(affectedLinkIds);
+                // refreshLinksByIds(affectedLinkIds);
                 return {runtimeId: runtimeTriangleId, applied: !!p, position: p || null};
             };
 
@@ -3603,6 +3111,9 @@
                     );
                 }
             }
+            try {
+                init?.graphService?.refreshGraph(init)
+            } catch {}
 
             const report = {
                 opdName,
@@ -3741,7 +3252,7 @@
             }
         } else {
             if (typeof x === "number" && typeof y === "number") {
-                node.position(x, y);
+                node.position(x, y, {});
             }
             graph.addCell(node);
         }
@@ -3941,6 +3452,7 @@
         exportEntireOpdTree,
         importEntireOpdTreeAio
     };
+    __opcloudSingleBoot._findAnyModelByLabel = findAnyModelByLabel
     console.log("OPCloud single-boot toolkit loaded");
 })();
 
