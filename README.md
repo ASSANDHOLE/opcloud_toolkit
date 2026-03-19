@@ -81,8 +81,9 @@ Main popup features:
 
 ## Known Limitations
 
-- `OvertimeException` links are not tested
+- `OvertimeException` and `SelfInvokation` links are not tested
 - max-duration behavior is not currently handled
+- Inheritance of `Exhibition` is not properly reconstructed (e.g. `Obj1` exhibits `Obj2`, `Obj2` exhibits `Obj3`, unfold `Obj3`, Remove `Obj1` from the sub-opd, `Obj2` will change name from `Obj2` to `Obj2 of Obj1`, but we did not handle that)
 - fonts are not explicitly considered for fidelity
 - in-diagram in-zoom UI behavior is not exposed as a popup feature
 - some advanced OPCloud features are still unsupported

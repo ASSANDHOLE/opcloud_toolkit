@@ -739,102 +739,6 @@
         }
     }
 
-    function renameStatesByVisualOrder(model, names) {
-        const states = getStatesByVisualOrder(model);
-
-        if (states.length !== names.length) {
-            throw new Error("renameStatesByVisualOrder requires exactly one name per state");
-        }
-
-        const renamed = [];
-        for (let i = 0; i < names.length; i++) {
-            const state = states[i];
-            const name = names[i];
-            setLabelOnModel(state, name);
-            renamed.push({
-                id: getIdFromModel(state),
-                label: getLabelFromModel(state)
-            });
-        }
-
-        return renamed;
-    }
-
-    function syncStateNameBindings(model, names) {
-        const states = getStatesByVisualOrder(model);
-        if (states.length !== names.length) {
-            throw new Error("syncStateNameBindings requires exactly one name per state");
-        }
-
-        const visual = model.getVisual?.() || null;
-        const logical = visual?.logicalElement || null;
-        const stateIds = states.map(s => getIdFromModel(s));
-
-        const visualStates = Array.isArray(visual?.states) ? visual.states : null;
-        const logicalStates = Array.isArray(logical?.states_) ? logical.states_ : (
-            typeof logical?.states === "function" && Array.isArray(logical.states()) ? logical.states() : null
-        );
-
-        if (visualStates) {
-            const orderedVisualStates = stateIds.map(id => visualStates.find(v => v?.id === id)).filter(Boolean);
-            if (orderedVisualStates.length === names.length) {
-                orderedVisualStates.forEach((s, i) => {
-                    try {
-                        s.text = names[i];
-                    } catch {
-                    }
-                    try {
-                        s.label = names[i];
-                    } catch {
-                    }
-                    try {
-                        s.name = names[i];
-                    } catch {
-                    }
-                });
-            } else {
-                visualStates.slice(0, names.length).forEach((s, i) => {
-                    try {
-                        s.text = names[i];
-                    } catch {
-                    }
-                    try {
-                        s.label = names[i];
-                    } catch {
-                    }
-                    try {
-                        s.name = names[i];
-                    } catch {
-                    }
-                });
-            }
-        }
-
-        if (logicalStates) {
-            logicalStates.slice(0, names.length).forEach((s, i) => {
-                try {
-                    s.text = names[i];
-                } catch {
-                }
-                try {
-                    s.label = names[i];
-                } catch {
-                }
-                try {
-                    s.name = names[i];
-                } catch {
-                }
-            });
-        }
-
-        return {
-            stateIds,
-            names,
-            visualStates: visualStates ? visualStates.length : null,
-            logicalStates: logicalStates ? logicalStates.length : null
-        };
-    }
-
     async function addStates(target, names) {
         await ensureUiSeedCaptured();
 
@@ -1545,28 +1449,6 @@
             return parentLabelResolved ? `object:${parentLabelResolved}/state:${label}` : `state:${label}`;
         }
         return `${type || "unknown"}:${label}`;
-    }
-
-    function resolveNameFriendlyEndpoint(ref) {
-        if (!ref) return null;
-        if (typeof ref === "string") {
-            if (ref.startsWith("object:")) {
-                return findCurrentNodeByTypeAndLabel("opm.Object", ref.slice("object:".length));
-            }
-            if (ref.startsWith("process:")) {
-                return findCurrentNodeByTypeAndLabel("opm.Process", ref.slice("process:".length));
-            }
-            if (ref.startsWith("object:") && ref.includes("/state:")) {
-                const m = ref.match(/^object:(.*)\/state:(.*)$/);
-                if (m) return findCurrentStateByParentLabelAndLabel(m[1], m[2]);
-            }
-            const stateMatch = ref.match(/^object:(.*)\/state:(.*)$/);
-            if (stateMatch) {
-                return findCurrentStateByParentLabelAndLabel(stateMatch[1], stateMatch[2]);
-            }
-            return findAnyModelByLabel(ref);
-        }
-        return null;
     }
 
     function summarizeGraphCell(cell) {
