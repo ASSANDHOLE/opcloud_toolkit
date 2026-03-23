@@ -2143,7 +2143,7 @@
             version: 2,
             meta: {
                 exportedAt: new Date().toISOString(),
-                tool: "opcloud-single-boot-toolkit"
+                tool: "opcloud-toolkit"
             },
             nodes: nodeSummaries,
             statesByParent,
@@ -2242,10 +2242,10 @@
         }
 
         const exportData = {
-            version: 1,
+            version: 2,
             meta: {
                 exportedAt: new Date().toISOString(),
-                tool: "opcloud-single-boot-toolkit",
+                tool: "opcloud-toolkit",
                 currentOpdAtExport: previousCurrentOpd ? summarizeOpd(previousCurrentOpd) : null,
                 opdCount: entries.length
             },
