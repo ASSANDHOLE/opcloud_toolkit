@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "OPCloud Toolkit",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Bootstrap, export, and import OPCloud diagrams from a popup.",
   "action": {
     "default_title": "OPCloud Toolkit",

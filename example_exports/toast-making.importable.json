@@ -1,7 +1,7 @@
 {
   "version": 1,
   "meta": {
-    "exportedAt": "2026-03-18T07:28:55.096228Z",
+    "exportedAt": "2026-03-27T17:53:30.823870Z",
     "tool": "opcloud-authoring-builder",
     "opdCount": 1
   },
@@ -19,7 +19,7 @@
       "local": {
         "version": 2,
         "meta": {
-          "exportedAt": "2026-03-18T07:28:55.096193Z",
+          "exportedAt": "2026-03-27T17:53:30.823835Z",
           "tool": "opcloud-authoring-builder"
         },
         "nodes": [
@@ -55,6 +55,7 @@
             },
             "essence": 0,
             "affiliation": 0,
+            "statesArrange": "bottom",
             "embeddedIds": [
               "92ccefdc-43f1-543d-b6a3-42f280a26373",
               "c52dc8bb-0ff3-5a5a-a44d-f40eb3eca21e"

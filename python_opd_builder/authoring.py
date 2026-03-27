@@ -131,7 +131,12 @@ class NodeSpec:
     parent: Optional[str] = None
     essence: Optional[int] = None
     affiliation: Optional[int] = None
+    states_arrange: Optional[str] = None
     states: List[StateSpec] = field(default_factory=list)
+
+    def _ensure_default_states_arrange(self) -> None:
+        if self.kind == "object" and self.states and self.states_arrange is None:
+            self.states_arrange = "bottom"
 
     def ref(self, state: Optional[Union[str, StateSpec]] = None) -> str:
         if state is None:
@@ -150,12 +155,14 @@ class NodeSpec:
         state_key = key or self._unique_state_key(_slugify(name, "state"))
         state = StateSpec(key=state_key, name=name, position=position, size=size)
         self.states.append(state)
+        self._ensure_default_states_arrange()
         return state
 
     def update_states(self, *names: str) -> "NodeSpec":
         self.states = []
         for name in names:
             self.add_state(name)
+        self._ensure_default_states_arrange()
         return self
 
     def updateState(self, *names: str) -> "NodeSpec":
@@ -180,10 +187,12 @@ class NodeSpec:
             parent=parent,
             essence=self.essence,
             affiliation=self.affiliation,
+            states_arrange=self.states_arrange,
             states=[StateSpec(**state.to_dict()) for state in self.states],
         )
 
     def to_dict(self) -> JsonDict:
+        self._ensure_default_states_arrange()
         return _clean_none(
             {
                 "key": self.key,
@@ -195,6 +204,7 @@ class NodeSpec:
                 "attributes": {
                     "essence": self.essence,
                     "affiliation": self.affiliation,
+                    "statesArrange": self.states_arrange,
                 },
                 "states": [state.to_dict() for state in self.states],
             }
@@ -213,6 +223,7 @@ class OpmObject(NodeSpec):
         style: Optional[OpmStyle] = None,
         essence: Optional[Union[int, Essence]] = None,
         affiliation: Optional[Union[int, Affiliation]] = None,
+        states_arrange: Optional[str] = None,
     ) -> None:
         """Create an OPM object node.
 
@@ -235,6 +246,7 @@ class OpmObject(NodeSpec):
             parent=parent,
             essence=resolved_essence,
             affiliation=resolved_affiliation,
+            states_arrange=states_arrange,
         )
 
 
@@ -250,6 +262,7 @@ class OpmProcess(NodeSpec):
         style: Optional[OpmStyle] = None,
         essence: Optional[Union[int, Essence]] = None,
         affiliation: Optional[Union[int, Affiliation]] = None,
+        states_arrange: Optional[str] = None,
     ) -> None:
         """Create an OPM process node.
 
@@ -272,6 +285,7 @@ class OpmProcess(NodeSpec):
             parent=parent,
             essence=resolved_essence,
             affiliation=resolved_affiliation,
+            states_arrange=states_arrange,
         )
 
 
@@ -537,6 +551,7 @@ class OpdDiagram:
                 node.position = self._next_auto_position(node.parent)
             if node.size is None:
                 node.size = self._default_size("object", bool(node.states))
+            node._ensure_default_states_arrange()
             return self.add_node(node)  # type: ignore[return-value]
         if "position" not in kwargs or kwargs["position"] is None:
             kwargs["position"] = self._next_auto_position(kwargs.get("parent"))

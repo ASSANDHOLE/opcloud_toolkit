@@ -129,6 +129,173 @@
         });
     }
 
+    function getStatesArrange(model) {
+        const attrs = model?.get?.("attrs") || model?.attributes?.attrs || null;
+        const value = attrs?.statesArrange ?? null;
+        return typeof value === "string" && value.trim() ? value.trim() : null;
+    }
+
+    function renameStateDirect(stateModel, newLabel) {
+        if (!stateModel) throw new Error("State model is required");
+        if (getNodeType(stateModel) !== "opm.State") {
+            throw new Error("renameStateDirect requires an opm.State model");
+        }
+        if (typeof newLabel !== "string" || !newLabel.trim()) {
+            throw new Error("New state label must be a non-empty string");
+        }
+
+        const value = newLabel.trim();
+        const visual = stateModel.getVisual?.();
+        const logical = visual?.logicalElement;
+        const init = BOOT.capturedUiSeed.init;
+        if (!visual) throw new Error("State has no visual object");
+        if (!logical) throw new Error("State has no logical element");
+        if (!looksLikeInitRappidService(init)) {
+            throw new Error("No valid captured InitRappidService available");
+        }
+
+        const before = {
+            attrLabel: getLabelFromModel(stateModel),
+            logicalText: logical?.text ?? null,
+            logicalTextForListLogical: logical?.textForListLogical ?? null,
+            logicalLid: logical?.lid ?? null
+        };
+
+        try {
+            logical.opmModel.logForUndo?.((logical.text || before.attrLabel || "state") + " name change");
+            logical.opmModel.setShouldLogForUndoRedo?.(false, "state name change");
+        } catch {
+        }
+
+        try {
+            logical.textModule.name.autoFormatting = false;
+        } catch {
+        }
+        try {
+            logical.text = value;
+        } catch {
+        }
+        try {
+            logical.textForListLogical = value;
+        } catch {
+        }
+        try {
+            stateModel.attr({text: {textWrap: {text: value}}});
+        } catch {
+        }
+        try {
+            stateModel.updateSiblings(visual, init);
+        } catch {
+        }
+        try {
+            logical.opmModel.setShouldLogForUndoRedo?.(true, "state name change");
+        } catch {
+        }
+
+        const reboundLogical = stateModel.getVisual?.()?.logicalElement || logical;
+        const after = {
+            attrLabel: getLabelFromModel(stateModel),
+            logicalText: reboundLogical?.text ?? null,
+            logicalTextForListLogical: reboundLogical?.textForListLogical ?? null,
+            logicalLid: reboundLogical?.lid ?? null
+        };
+
+        const report = {
+            targetId: getIdFromModel(stateModel),
+            targetType: getNodeType(stateModel),
+            action: "renameDirect",
+            requestedLabel: value,
+            before,
+            after
+        };
+        log("renameStateDirect", report);
+        return report;
+    }
+
+    function applyStatesArrange(model, arrange) {
+        if (!model || getNodeType(model) !== "opm.Object") return {applied: false, reason: "not-object"};
+
+        const value = typeof arrange === "string" ? arrange.trim().toLowerCase() : "";
+        if (!["left", "right", "top", "bottom"].includes(value)) {
+            return {applied: false, reason: "invalid-arrangement", arrange: arrange ?? null};
+        }
+
+        const init = BOOT.capturedUiSeed.init;
+        if (!looksLikeInitRappidService(init)) {
+            throw new Error("No valid captured InitRappidService available");
+        }
+
+        let arranged = false;
+        let shifted = false;
+        let fitted = false;
+
+        try {
+            if (typeof model.arrangeEmbedded === "function") {
+                model.arrangeEmbedded(init, value);
+                arranged = true;
+            }
+        } catch {
+        }
+        try {
+            if (typeof model.shiftEmbeddedToEdge === "function") {
+                model.shiftEmbeddedToEdge(init);
+                shifted = true;
+            }
+        } catch {
+        }
+        try {
+            if (typeof model.updateSizePositionToFitEmbeded === "function") {
+                model.updateSizePositionToFitEmbeded();
+                fitted = true;
+            }
+        } catch {
+        }
+        try {
+            if (typeof model.shiftEmbeddedToEdge === "function") {
+                model.shiftEmbeddedToEdge(init);
+                shifted = true;
+            }
+        } catch {
+        }
+
+        return {applied: arranged || shifted || fitted, arrange: value, arranged, shifted, fitted};
+    }
+
+    function applyExportedStateGeometry(parentModel, states) {
+        const runtimeStates = getStatesByVisualOrder(parentModel);
+        const count = Math.min(runtimeStates.length, states.length);
+        const applied = [];
+
+        for (let i = 0; i < count; i++) {
+            const runtimeState = refreshModelRef(runtimeStates[i]) || runtimeStates[i];
+            const exportedState = states[i];
+            try {
+                if (exportedState?.position && typeof exportedState.position.x === "number" && typeof exportedState.position.y === "number") {
+                    runtimeState.position(exportedState.position.x, exportedState.position.y, {});
+                }
+            } catch {
+            }
+            try {
+                if (exportedState?.size && typeof exportedState.size.width === "number" && typeof exportedState.size.height === "number") {
+                    runtimeState.resize(exportedState.size.width, exportedState.size.height, {});
+                }
+            } catch {
+            }
+            applied.push({
+                exportedId: exportedState?.id ?? null,
+                runtimeId: getIdFromModel(runtimeState),
+                label: getLabelFromModel(runtimeState)
+            });
+        }
+
+        return {
+            appliedCount: applied.length,
+            runtimeCount: runtimeStates.length,
+            exportedCount: states.length,
+            applied
+        };
+    }
+
     function getEmbeddedThingChildren(model, {deep = true} = {}) {
         const cells = model?.getEmbeddedCells?.(deep ? {deep: true} : undefined) || [];
         return cells.filter(c => {
@@ -829,11 +996,12 @@
 
         const renameReports = [];
         for (let i = 0; i < desiredNames.length; i++) {
-            const stateModel = refreshModelRef(orderedStates[i]) || orderedStates[i];
+            const latestOrdered = getStatesByVisualOrder(refreshModelRef(model) || model);
+            const stateModel = refreshModelRef(latestOrdered[i] || orderedStates[i]) || latestOrdered[i] || orderedStates[i];
             const currentLabel = getLabelFromModel(stateModel);
             const desiredLabel = desiredNames[i];
             if (currentLabel === desiredLabel) continue;
-            const rep = await renameNodeAio(stateModel, desiredLabel, {onExisting: "rename"});
+            const rep = renameStateDirect(stateModel, desiredLabel);
             renameReports.push(rep);
             model = refreshModelRef(model) || model;
         }
@@ -1923,6 +2091,7 @@
                 affiliation: l?._affiliation ?? null,
                 logicalLid: l?.lid ?? null,
                 parentId: j.parent ?? null,
+                statesArrange: getStatesArrange(m),
                 embeddedIds: embeds,
                 embeddedThingIds,
                 isInZoomContainer: embeddedThingIds.length > 0
@@ -2463,7 +2632,12 @@
                 preferDirectRemove: true
             });
 
-            const refreshedParent = refreshModelRef(parentModel) || parentModel;
+            let refreshedParent = refreshModelRef(parentModel) || parentModel;
+            const exportedNode = (entry?.local?.nodes || []).find(node => node?.id === exportedNodeId) || null;
+            const arrangementReport = applyStatesArrange(refreshedParent, exportedNode?.statesArrange);
+            refreshedParent = refreshModelRef(refreshedParent) || refreshedParent;
+            const geometryReport = applyExportedStateGeometry(refreshedParent, states);
+            refreshedParent = refreshModelRef(refreshedParent) || refreshedParent;
             const runtimeStates = getStatesByVisualOrder(refreshedParent);
             if (runtimeStates.length !== states.length) {
                 throw new Error(
@@ -2478,7 +2652,9 @@
 
             return {
                 exportedStates: states,
-                runtimeStateRefsByExportedId
+                runtimeStateRefsByExportedId,
+                arrangementReport,
+                geometryReport
             };
         }
 

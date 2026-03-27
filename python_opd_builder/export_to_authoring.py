@@ -149,6 +149,7 @@ def build_authoring_from_importable(data: JsonDict) -> JsonDict:
                         "attributes": {
                             "essence": node.get("essence"),
                             "affiliation": node.get("affiliation"),
+                            "statesArrange": node.get("statesArrange"),
                         },
                         "states": authored_states,
                     }
@@ -326,6 +327,7 @@ def canonicalize_authoring(data: JsonDict) -> JsonDict:
                         "attributes": {
                             "essence": ((node.get("attributes") or {}).get("essence")),
                             "affiliation": ((node.get("attributes") or {}).get("affiliation")),
+                            "statesArrange": ((node.get("attributes") or {}).get("statesArrange")),
                         },
                         "states": states,
                     }

@@ -62,6 +62,8 @@ Runnable examples:
 - Use `project.get_sd()` to retrieve that root diagram.
 - `addObject(...)` and `addProcess(...)` fill in default positions and sizes when
   you omit them.
+- Node `attributes` can also carry `statesArrange` for object state layout
+  direction (`left`, `right`, `top`, `bottom`).
 - `addLink(...)` accepts either node objects or string refs.
 - State refs use `"node-key/state-key"` or `node.ref("state-key")`.
 - `addLink(...)` with a structural `LinkType` and a list target creates a

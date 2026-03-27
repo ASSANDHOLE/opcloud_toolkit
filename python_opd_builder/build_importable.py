@@ -158,6 +158,7 @@ def build_importable(data: JsonDict) -> JsonDict:
                         "size": node.get("size"),
                         "essence": attributes.get("essence"),
                         "affiliation": attributes.get("affiliation"),
+                        "statesArrange": attributes.get("statesArrange"),
                         "parentId": parent_node_id,
                         "embeddedIds": embedded_ids,
                         "embeddedThingIds": child_node_ids,
