@@ -2733,6 +2733,118 @@
             };
         }
 
+        function applyExportedNodeGeometry(node, runtime) {
+            if (!node || !runtime) {
+                return {appliedPosition: false, appliedSize: false, label: node?.label ?? null};
+            }
+
+            let appliedPosition = false;
+            let appliedSize = false;
+
+            if (node?.position && typeof node.position.x === "number" && typeof node.position.y === "number") {
+                try {
+                    const hasChildren = getEmbeddedThingChildren(runtime, {deep: true}).length > 0;
+                    if (hasChildren) {
+                        moveAndKeepChildrenPositionByPosition(runtime, node.position.x, node.position.y);
+                    } else {
+                        runtime.position(node.position.x, node.position.y, {});
+                    }
+                    appliedPosition = true;
+                } catch {
+                }
+            }
+
+            if (node?.size && typeof node.size.width === "number" && typeof node.size.height === "number") {
+                try {
+                    if (typeof runtime.resize === "function") {
+                        runtime.resize(node.size.width, node.size.height, {});
+                    } else if (typeof runtime.size === "function") {
+                        runtime.size(node.size.width, node.size.height, {});
+                    }
+                    appliedSize = true;
+                } catch {
+                }
+            }
+
+            return {
+                label: node.label,
+                type: node.type,
+                appliedPosition,
+                appliedSize
+            };
+        }
+
+        function getExportedNodesInStabilizeOrder(entry) {
+            const exportedNodes = entry?.local?.nodes || [];
+            const byId = new Map(exportedNodes.map(node => [node.id, node]));
+            const depthOf = (node, seen = new Set()) => {
+                if (!node?.parentId) return 0;
+                if (seen.has(node.id)) return 0;
+                seen.add(node.id);
+                return 1 + depthOf(byId.get(node.parentId), seen);
+            };
+            return exportedNodes.slice().sort((a, b) => {
+                const ad = depthOf(a);
+                const bd = depthOf(b);
+                if (ad !== bd) return ad - bd;
+                return String(a?.label ?? "").localeCompare(String(b?.label ?? ""));
+            });
+        }
+
+        function stabilizeCurrentOpdLayout(entry, runtimeRefsByExportedId, runtimeStateRefsByExportedId, {
+            passes = 2
+        } = {}) {
+            const orderedNodes = getExportedNodesInStabilizeOrder(entry);
+            const passReports = [];
+
+            for (let pass = 0; pass < passes; pass++) {
+                const nodeReports = [];
+                for (const node of orderedNodes) {
+                    let runtime = resolveRuntimeRef(runtimeRefsByExportedId.get(node.id));
+                    if (!runtime) continue;
+                    runtime = refreshModelRef(runtime) || runtime;
+
+                    const geometryReport = applyExportedNodeGeometry(node, runtime);
+                    runtime = refreshModelRef(runtime) || runtime;
+
+                    let arrangementReport = null;
+                    let stateGeometryReport = null;
+                    if (getNodeType(runtime) === "opm.Object") {
+                        arrangementReport = applyStatesArrange(runtime, node.statesArrange);
+                        runtime = refreshModelRef(runtime) || runtime;
+                        stateGeometryReport = applyExportedStateGeometry(runtime, getStatesArray(entry, node.id));
+                        runtime = refreshModelRef(runtime) || runtime;
+                    }
+
+                    runtimeRefsByExportedId.set(node.id, buildNodeRefFromModel(runtime));
+
+                    const runtimeStates = getStatesByVisualOrder(runtime);
+                    const exportedStates = getStatesArray(entry, node.id);
+                    for (let i = 0; i < Math.min(runtimeStates.length, exportedStates.length); i++) {
+                        runtimeStateRefsByExportedId.set(exportedStates[i].id, buildStateRef(runtime, exportedStates[i].label));
+                    }
+
+                    nodeReports.push({
+                        label: node.label,
+                        type: node.type,
+                        geometryReport,
+                        arrangementReport,
+                        stateGeometryReport
+                    });
+                }
+
+                // try {
+                //     BOOT.capturedUiSeed.init?.graphService?.refreshGraph?.(BOOT.capturedUiSeed.init);
+                // } catch {
+                // }
+                passReports.push({pass: pass + 1, nodeReports});
+            }
+
+            const report = {passes, passReports};
+            log("importEntireOpdTree.stabilizeCurrentOpdLayout", report);
+            return report;
+        }
+
         async function applyInZoomStructuresInCurrentOpd(entry, runtimeRefsByExportedId, runtimeStateRefsByExportedId) {
             const exportedNodes = entry?.local?.nodes || [];
             const exportedNodeById = new Map(exportedNodes.map(n => [n.id, n]));
@@ -3118,6 +3230,9 @@
             };
 
             const {runtimeRefsByExportedId, runtimeStateRefsByExportedId} = await ensureLocalNodes(entry);
+            const stabilizationBeforeInZoom = stabilizeCurrentOpdLayout(entry, runtimeRefsByExportedId, runtimeStateRefsByExportedId, {
+                passes: 2
+            });
             const proceduralDoneIds = new Set();
             const fundamentalDoneIds = new Set();
             const linksBeforeInZoom = await rebuildLinks(entry, runtimeRefsByExportedId, runtimeStateRefsByExportedId, {
@@ -3125,9 +3240,15 @@
                 doneFundamentalGroupIds: fundamentalDoneIds
             });
             const inZoom = await applyInZoomStructuresInCurrentOpd(entry, runtimeRefsByExportedId, runtimeStateRefsByExportedId);
+            const stabilizationAfterInZoom = stabilizeCurrentOpdLayout(entry, runtimeRefsByExportedId, runtimeStateRefsByExportedId, {
+                passes: 2
+            });
             const linksAfterInZoom = await rebuildLinks(entry, runtimeRefsByExportedId, runtimeStateRefsByExportedId, {
                 doneProceduralIds: proceduralDoneIds,
                 doneFundamentalGroupIds: fundamentalDoneIds
+            });
+            const stabilizationAfterLinks = stabilizeCurrentOpdLayout(entry, runtimeRefsByExportedId, runtimeStateRefsByExportedId, {
+                passes: 2
             });
             const links = {
                 procedural: [...linksBeforeInZoom.procedural, ...linksAfterInZoom.procedural],
@@ -3170,7 +3291,10 @@
                 }
             }
             try {
-                init?.graphService?.refreshGraph(init)
+                init?.graphService?.refreshGraph?.(init);
+            } catch {}
+            try {
+                init?.graphService?.renderGraph?.(init?.opmModel?.currentOpd, init, null, false, true);
             } catch {}
 
             const report = {
@@ -3182,6 +3306,9 @@
                     oldId,
                     runtime: summarizeModel(resolveRuntimeRef(ref))
                 })),
+                stabilizationBeforeInZoom,
+                stabilizationAfterInZoom,
+                stabilizationAfterLinks,
                 links,
                 geometryReplay
             };
