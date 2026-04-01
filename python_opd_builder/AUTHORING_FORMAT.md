@@ -1,84 +1,21 @@
 # Python OPD Builder Authoring Format
 
-This format is meant to be written by humans or AI, then converted into an
-OPCloud-importable tree JSON.
+This is the intermediate JSON format used by [`python_opd_builder`](C:/Users/anguangyan/CodexProjects/opcloud_toolkit/python_opd_builder).
 
-## Goal
+It is meant to be:
 
-Instead of treating the OPCloud export as the source of truth, this format uses
-stable semantic `key` values:
+- stable across repeated saves
+- easier for humans or AI to edit than raw OPCloud export JSON
+- expressive enough to compile back into OPCloud-importable JSON
 
-- no dependence on export IDs
-- easy to write from Python code
-- safe to re-save repeatedly
-- references stay understandable
+## Conversion Flow
 
-`python_opd_builder/export_to_authoring.py` converts old OPCloud exports into
-this format and also canonicalizes existing authoring files.
-
-`python_opd_builder/build_importable.py` converts this format back into an
-importable OPCloud tree.
-
-## Python Builder API
-
-[`python_opd_builder/authoring.py`](/C:/Users/anguangyan/CodexProjects/opcloud_toolkit/python_opd_builder/authoring.py)
-provides a class-based API for building this format directly from Python.
-
-Example:
-
-```python
-from python_opd_builder.authoring import AuthoringProject, LinkType, opmObj, opmProc
-
-project = AuthoringProject()
-sd = project.get_sd()
-
-customer = opmObj("Customer", key="customer")
-customer.updateState("Interested", "Verified")
-sd.addObject(customer)
-
-checkout = opmProc("Checkout", key="checkout")
-sd.addProcess(checkout)
-sd.addLink(LinkType.CONSUMPTION, customer.ref("verified"), checkout)
-
-checkout_child = sd.inzoom("checkout", key="checkout-opd", name="Checkout")
-checkout_child.addObject("Cart", key="cart")
-checkout_child.addObject("Receipt", key="receipt")
-checkout_child.addLink(LinkType.CONSUMPTION, "cart", "checkout-consume")
-checkout_child.addLink(LinkType.RESULT, "checkout-yield", "receipt")
-
-checkout_child.deleteEndpoint("cart")
-
-project.save("tmp/demo.authoring.json")
-```
-
-Runnable examples:
-
-- [`scripts/build_example_opd.py`](/C:/Users/anguangyan/CodexProjects/opcloud_toolkit/scripts/build_example_opd.py)
-- [`scripts/build_complex_opd.py`](/C:/Users/anguangyan/CodexProjects/opcloud_toolkit/scripts/build_complex_opd.py)
-
-## Builder Semantics
-
-- `AuthoringProject()` creates a default root diagram named `SD`.
-- Use `project.get_sd()` to retrieve that root diagram.
-- `addObject(...)` and `addProcess(...)` fill in default positions and sizes when
-  you omit them.
-- Node `attributes` can also carry `statesArrange` for object state layout
-  direction (`left`, `right`, `top`, `bottom`).
-- `addLink(...)` accepts either node objects or string refs.
-- State refs use `"node-key/state-key"` or `node.ref("state-key")`.
-- `addLink(...)` with a structural `LinkType` and a list target creates a
-  fundamental group.
-- `unfold(..., inherit=True)` creates a child OPD for the focal node and copies
-  first-hop relevant context into it. It does not auto-create extra subprocesses.
-- `inzoom(..., inherit=True)` is process-oriented and auto-creates exactly two
-  subprocesses under the focal process:
-  - `<focal>-consume`
-  - `<focal>-yield`
-- `deleteEndpoint(...)` removes:
-  - a node and its descendants
-  - all states under deleted nodes
-  - any link touching the deleted node/state
-  - any structural group touching the deleted node/state
+- [`export_to_authoring.py`](C:/Users/anguangyan/CodexProjects/opcloud_toolkit/python_opd_builder/export_to_authoring.py):
+  importable/export JSON -> authoring JSON
+- [`build_importable.py`](C:/Users/anguangyan/CodexProjects/opcloud_toolkit/python_opd_builder/build_importable.py):
+  authoring JSON -> importable JSON
+- [`authoring.py`](C:/Users/anguangyan/CodexProjects/opcloud_toolkit/python_opd_builder/authoring.py):
+  Python API -> authoring JSON
 
 ## Top-Level Shape
 
@@ -90,3 +27,161 @@ Runnable examples:
   "diagrams": []
 }
 ```
+
+Fields:
+
+- `format`: always `"opcloud-authoring"`
+- `version`: current authoring schema version
+- `meta`: optional free-form metadata
+- `diagrams`: list of OPDs
+
+## Diagram Shape
+
+Each diagram looks like:
+
+```json
+{
+  "key": "sd",
+  "name": "SD",
+  "parent": null,
+  "focalNode": null,
+  "nodes": [],
+  "links": [],
+  "groups": []
+}
+```
+
+Fields:
+
+- `key`: stable diagram identifier
+- `name`: diagram display name
+- `parent`: parent diagram key, or `null` for root
+- `focalNode`: focal node key in the parent diagram for unfold/in-zoom children
+- `nodes`: objects and processes in this OPD
+- `links`: procedural links
+- `groups`: fundamental groups
+
+## Node Shape
+
+Objects and processes share the same base structure:
+
+```json
+{
+  "key": "customer",
+  "name": "Customer",
+  "kind": "object",
+  "parent": null,
+  "position": { "x": 120, "y": 120 },
+  "size": { "width": 135, "height": 60 },
+  "attributes": {
+    "essence": 0,
+    "affiliation": 0,
+    "statesArrange": "bottom"
+  },
+  "states": []
+}
+```
+
+Fields:
+
+- `key`: stable node identifier inside the diagram
+- `name`: visible label
+- `kind`: `"object"` or `"process"`
+- `parent`: parent node key if this node is embedded in another node
+- `position`: top-left visual position
+- `size`: visual size
+- `attributes.essence`: optional OPM essence value
+- `attributes.affiliation`: optional OPM affiliation value
+- `attributes.statesArrange`: optional object state arrangement direction
+  - allowed values: `left`, `right`, `top`, `bottom`
+- `states`: list of states for object nodes
+
+## State Shape
+
+States are nested under their owning object:
+
+```json
+{
+  "key": "verified",
+  "name": "Verified",
+  "position": { "x": 180, "y": 200 },
+  "size": { "width": 60, "height": 30 }
+}
+```
+
+State refs in links or groups use:
+
+```text
+node-key/state-key
+```
+
+## Procedural Link Shape
+
+```json
+{
+  "key": "customer-consumed",
+  "kind": "procedural",
+  "type": 2,
+  "from": "customer/verified",
+  "to": "checkout",
+  "geometry": {
+    "vertices": [],
+    "labels": []
+  }
+}
+```
+
+Fields:
+
+- `type`: numeric OPCloud link type
+- `from`: source node or state ref
+- `to`: target node or state ref
+- `geometry`: optional visual geometry payload
+
+## Fundamental Group Shape
+
+```json
+{
+  "key": "customer-exhibition",
+  "kind": "fundamental",
+  "type": 12,
+  "owner": "customer",
+  "triangle": {
+    "position": { "x": 200, "y": 180 },
+    "size": { "width": 30, "height": 25 },
+    "angle": 0
+  },
+  "ownerLinkGeometry": {
+    "vertices": [],
+    "labels": []
+  },
+  "members": [
+    {
+      "key": "verified-member",
+      "to": "customer/verified",
+      "type": 12,
+      "geometry": {
+        "vertices": [],
+        "labels": []
+      }
+    }
+  ]
+}
+```
+
+## Builder Notes
+
+- `AuthoringProject()` creates a root diagram named `SD`.
+- `project.get_sd()` returns that root diagram.
+- `addObject(...)` and `addProcess(...)` fill default position/size if omitted.
+- `updateState(...)` / `add_state(...)` define object states.
+- Objects with states default to `statesArrange="bottom"` unless explicitly set otherwise.
+- `unfold(..., inherit=True)` and `inzoom(..., inherit=True)` can create child OPDs with inherited context.
+- `deleteEndpoint(...)` removes nodes, states, and affected links/groups.
+
+## Examples
+
+See:
+
+- [`build_example_opd.py`](C:/Users/anguangyan/CodexProjects/opcloud_toolkit/scripts/build_example_opd.py)
+- [`build_complex_opd.py`](C:/Users/anguangyan/CodexProjects/opcloud_toolkit/scripts/build_complex_opd.py)
