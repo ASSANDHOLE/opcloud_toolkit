@@ -83,6 +83,24 @@
 
     <section class="panel">
         <div class="panel-head">
+            <h2>Object Locations</h2>
+        </div>
+        <details id="locationPanel" class="guide-block">
+            <summary>Edit current OPD object and process positions</summary>
+            <p class="muted">
+                Shows visible objects and processes in the current OPD. The selected item and recently selected
+                items are listed first.
+            </p>
+            <div class="button-row">
+                <button id="refreshLocationsButton" class="ghost" type="button" disabled>Refresh List</button>
+            </div>
+            <div id="locationSummary" class="muted">Initialize the toolkit to load object positions.</div>
+            <div id="locationList" class="location-list empty"></div>
+        </details>
+    </section>
+
+    <section class="panel">
+        <div class="panel-head">
             <h2>Export</h2>
         </div>
         <div class="button-row">

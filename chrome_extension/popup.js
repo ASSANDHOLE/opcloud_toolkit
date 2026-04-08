@@ -7,11 +7,14 @@ const bootstrapButton = document.getElementById("bootstrapButton");
 const refreshStatusButton = document.getElementById("refreshStatusButton");
 const downloadExportButton = document.getElementById("downloadExportButton");
 const copyExportButton = document.getElementById("copyExportButton");
+const refreshLocationsButton = document.getElementById("refreshLocationsButton");
 const importFileButton = document.getElementById("importFileButton");
 const importTextButton = document.getElementById("importTextButton");
 const clearTextButton = document.getElementById("clearTextButton");
 const fileInput = document.getElementById("fileInput");
 const jsonInput = document.getElementById("jsonInput");
+const locationSummary = document.getElementById("locationSummary");
+const locationList = document.getElementById("locationList");
 const SUPPORTED_ORIGIN = "https://opcloud-sandbox.web.app";
 
 function setLog(message) {
@@ -29,6 +32,7 @@ function setBusy(isBusy) {
     refreshStatusButton.disabled = isBusy;
     downloadExportButton.disabled = isBusy || downloadExportButton.dataset.locked === "1";
     copyExportButton.disabled = isBusy || copyExportButton.dataset.locked === "1";
+    refreshLocationsButton.disabled = isBusy || refreshLocationsButton.dataset.locked === "1";
     importFileButton.disabled = isBusy || importFileButton.dataset.locked === "1";
     importTextButton.disabled = isBusy || importTextButton.dataset.locked === "1";
 }
@@ -44,9 +48,12 @@ function disableForUnsupportedSite(message) {
     bootstrapButton.dataset.locked = "1";
     downloadExportButton.dataset.locked = "1";
     copyExportButton.dataset.locked = "1";
+    refreshLocationsButton.dataset.locked = "1";
     importFileButton.dataset.locked = "1";
     importTextButton.dataset.locked = "1";
     fileInput.disabled = true;
+    locationSummary.textContent = "Open OPCloud Sandbox in the active tab.";
+    renderLocationItems([]);
     setBusy(false);
 }
 
@@ -54,10 +61,15 @@ function setEnabledWhenBootstrapped(isBootstrapped) {
     const lock = isBootstrapped ? "0" : "1";
     downloadExportButton.dataset.locked = lock;
     copyExportButton.dataset.locked = lock;
+    refreshLocationsButton.dataset.locked = lock;
     importFileButton.dataset.locked = lock;
     importTextButton.dataset.locked = lock;
     fileInput.disabled = !isBootstrapped;
     bootstrapButton.dataset.locked = isBootstrapped ? "1" : "0";
+    if (!isBootstrapped) {
+        locationSummary.textContent = "Initialize the toolkit to load object positions.";
+        renderLocationItems([]);
+    }
     setBusy(false);
 }
 
@@ -83,6 +95,8 @@ function applyStatus(status, options = {}) {
         setStatusBadge("Ready", "");
         statusText.textContent = "Toolkit is bootstrapped. Export and import actions are enabled.";
         setEnabledWhenBootstrapped(true);
+        loadObjectLocations({preserveLog: true}).catch(() => {
+        });
         if (!options.preserveLog) {
             setLog(`Connected to:\n${currentUrl}`);
         }
@@ -113,6 +127,115 @@ function getTimestampFileSuffix() {
         pad(now.getMinutes()),
         pad(now.getSeconds())
     ].join("");
+}
+
+function escapeHtml(value) {
+    return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+    }[char]));
+}
+
+function formatNodeType(type) {
+    if (type === "opm.Object") return "Object";
+    if (type === "opm.Process") return "Process";
+    return type || "Node";
+}
+
+function getNodeTypeTagClass(type) {
+    if (type === "opm.Object") return "object";
+    if (type === "opm.Process") return "process";
+    return "";
+}
+
+function renderLocationItems(items) {
+    if (!Array.isArray(items) || items.length === 0) {
+        locationList.className = "location-list empty";
+        locationList.innerHTML = "No visible objects or processes found in the current OPD.";
+        return;
+    }
+
+    locationList.className = "location-list";
+    locationList.innerHTML = items.map((item) => {
+        const topTags = [];
+        if (item.stateCount > 0) {
+            topTags.push(`<span class="location-tag">${item.stateCount} state${item.stateCount === 1 ? "" : "s"}</span>`);
+        }
+        if (item.isSelected) {
+            topTags.push('<span class="location-tag selected">Selected</span>');
+        }
+        const typeLabel = formatNodeType(item.type);
+        const typeTagClass = getNodeTypeTagClass(item.type);
+
+        return `
+            <form class="location-card${item.isSelected ? " selected" : ""}" data-node-id="${escapeHtml(item.id)}">
+                <div class="location-card-head">
+                    <div>
+                        <p class="location-card-title" title="${escapeHtml(item.label)}">${escapeHtml(item.label)}</p>
+                    </div>
+                    <div class="location-tags">${topTags.join("")}</div>
+                </div>
+                <div class="location-row">
+                    <label class="location-name">
+                        <button type="button" title="${escapeHtml(typeLabel)}">
+                            <span class="location-tag ${typeTagClass}">${escapeHtml(typeLabel)}</span>
+                        </button>
+                    </label>
+                    <label class="location-field">
+                        <span>X</span>
+                        <input name="x" type="number" step="1" value="${Number.isFinite(item.position?.x) ? item.position.x : ""}">
+                    </label>
+                    <label class="location-field">
+                        <span>Y</span>
+                        <input name="y" type="number" step="1" value="${Number.isFinite(item.position?.y) ? item.position.y : ""}">
+                    </label>
+                    <div class="location-actions">
+                        <button type="submit">Apply</button>
+                    </div>
+                </div>
+            </form>
+        `;
+    }).join("");
+}
+
+async function loadObjectLocations(options = {}) {
+    const {preserveLog = false} = options;
+
+    try {
+        const result = await sendToPage("getObjectLocations");
+        const currentOpdName = result?.report?.currentOpd?.name || "current OPD";
+        const count = Array.isArray(result?.report?.items) ? result.report.items.length : 0;
+        locationSummary.textContent = `Loaded ${count} visible object/process item${count === 1 ? "" : "s"} from ${currentOpdName}.`;
+        renderLocationItems(result?.report?.items || []);
+        if (!preserveLog) {
+            setLog(`Loaded ${count} object/process positions from ${currentOpdName}.`);
+        }
+    } catch (error) {
+        locationSummary.textContent = "Could not load object positions from the page.";
+        renderLocationItems([]);
+        if (!preserveLog) {
+            setLog(`Location load failed.\n${formatError(error)}`);
+        }
+    }
+}
+
+async function updateNodeLocation(nodeId, x, y) {
+    setBusyState(true, "Updating position...");
+    setLog(`Updating node position...\n${nodeId}\n(${x}, ${y})`);
+    try {
+        const result = await sendToPage("setObjectLocation", {nodeId, x, y});
+        const label = result?.report?.after?.label || nodeId;
+        const position = result?.report?.after?.position || {x, y};
+        await loadObjectLocations({preserveLog: true});
+        setLog(`Position updated.\n${label}\n(${position.x}, ${position.y})`);
+    } catch (error) {
+        setLog(`Position update failed.\n${formatError(error)}`);
+    } finally {
+        setBusyState(false);
+    }
 }
 
 async function getActiveTab() {
@@ -330,11 +453,40 @@ bootstrapButton.addEventListener("click", bootstrapToolkit);
 refreshStatusButton.addEventListener("click", refreshStatus);
 downloadExportButton.addEventListener("click", downloadExport);
 copyExportButton.addEventListener("click", copyExport);
+refreshLocationsButton.addEventListener("click", async () => {
+    setBusyState(true, "Loading positions...");
+    try {
+        await loadObjectLocations();
+    } finally {
+        setBusyState(false);
+    }
+});
 importTextButton.addEventListener("click", importFromText);
 importFileButton.addEventListener("click", importFromFile);
 clearTextButton.addEventListener("click", () => {
     jsonInput.value = "";
     setLog("Pasted JSON cleared.");
+});
+locationList.addEventListener("submit", async (event) => {
+    const form = event.target;
+    if (!(form instanceof HTMLFormElement)) return;
+    event.preventDefault();
+
+    const nodeId = form.dataset.nodeId;
+    const xInput = form.elements.namedItem("x");
+    const yInput = form.elements.namedItem("y");
+    const x = Number(xInput?.value);
+    const y = Number(yInput?.value);
+    if (!nodeId) {
+        setLog("Missing node id for location update.");
+        return;
+    }
+    if (!Number.isFinite(x) || !Number.isFinite(y)) {
+        setLog("Position update failed.\nX and Y must be valid numbers.");
+        return;
+    }
+
+    await updateNodeLocation(nodeId, x, y);
 });
 
 refreshStatus();

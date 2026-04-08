@@ -22,7 +22,10 @@
             object: null,
             process: null
         },
-        logs: []
+        logs: [],
+        recentSelectionIds: [],
+        selectionSubscription: null,
+        lastTrackedSelectionId: null
     };
 
     function log(kind, payload) {
@@ -106,6 +109,11 @@
     function getPositionFromModel(model) {
         const j = model?.toJSON ? model.toJSON() : model;
         return j?.position || null;
+    }
+
+    function getSizeFromModel(model) {
+        const j = model?.toJSON ? model.toJSON() : model;
+        return j?.size || null;
     }
 
     function getStateChildren(model) {
@@ -1636,6 +1644,168 @@
         const graph = BOOT.capturedUiSeed.init?.graph || BOOT.cachedGraph || null;
         if (!graph || typeof graph.getCells !== "function") return [];
         return graph.getCells();
+    }
+
+    function getCurrentSelectedModel() {
+        const init = BOOT?.capturedUiSeed?.init;
+        const selected = init?.selected?._value;
+        return refreshModelRef(selected) || selected || null;
+    }
+
+    function rememberRecentSelection(model) {
+        const id = getIdFromModel(model);
+        if (!id) return BOOT.recentSelectionIds.slice();
+        BOOT.recentSelectionIds = [
+            id,
+            ...BOOT.recentSelectionIds.filter(existingId => existingId !== id)
+        ].slice(0, 50);
+        return BOOT.recentSelectionIds.slice();
+    }
+
+    function rememberCurrentSelection() {
+        const selected = getCurrentSelectedModel();
+        if (!selected) return null;
+        const type = getNodeType(selected);
+        if (type !== "opm.Object" && type !== "opm.Process") {
+            return null;
+        }
+        rememberRecentSelection(selected);
+        return selected;
+    }
+
+    function startSelectionTracking() {
+        if (BOOT.selectionSubscription) {
+            return BOOT.selectionSubscription;
+        }
+
+        const init = BOOT?.capturedUiSeed?.init;
+        const selected = init?.selected;
+        if (!selected || typeof selected.subscribe !== "function") {
+            return null;
+        }
+
+        BOOT.selectionSubscription = selected.subscribe((element) => {
+            try {
+                const model = refreshModelRef(element) || element || null;
+                const selectedId = getIdFromModel(model);
+                if (!selectedId) {
+                    BOOT.lastTrackedSelectionId = null;
+                    return;
+                }
+                if (selectedId === BOOT.lastTrackedSelectionId) {
+                    return;
+                }
+
+                const type = getNodeType(model);
+                BOOT.lastTrackedSelectionId = selectedId;
+                if (type !== "opm.Object" && type !== "opm.Process") {
+                    return;
+                }
+
+                rememberRecentSelection(model);
+            } catch {
+            }
+        });
+
+        return BOOT.selectionSubscription;
+    }
+
+    function getCurrentOpdNodeLocationList() {
+        const currentOpd = getCurrentOpd();
+        if (!currentOpd) {
+            throw new Error("No current OPD available");
+        }
+
+        const selected = rememberCurrentSelection();
+        const selectedId = getIdFromModel(selected);
+        const rankByRecentId = new Map(
+            BOOT.recentSelectionIds.map((id, index) => [id, index])
+        );
+
+        const items = getMainElementModels()
+            .filter(model => {
+                const type = getNodeType(model);
+                return type === "opm.Object" || type === "opm.Process";
+            })
+            .map(model => {
+                const refreshed = refreshModelRef(model) || model;
+                const id = getIdFromModel(refreshed);
+                const position = getPositionFromModel(refreshed);
+                const size = getSizeFromModel(refreshed);
+                return {
+                    id,
+                    label: getLabelFromModel(refreshed) || "(unnamed)",
+                    type: getNodeType(refreshed),
+                    position,
+                    size,
+                    stateCount: countStates(refreshed),
+                    isSelected: !!selectedId && id === selectedId,
+                    recentRank: rankByRecentId.has(id) ? rankByRecentId.get(id) : Number.POSITIVE_INFINITY
+                };
+            })
+            .sort((a, b) => {
+                if (a.isSelected !== b.isSelected) return a.isSelected ? -1 : 1;
+                if (a.recentRank !== b.recentRank) return a.recentRank - b.recentRank;
+                if (a.label !== b.label) return a.label.localeCompare(b.label);
+                return String(a.id).localeCompare(String(b.id));
+            });
+
+        return {
+            currentOpd: summarizeOpd(currentOpd),
+            currentOpdPath: getCurrentOpdPath(),
+            selectedNodeId: selectedId || null,
+            recentSelectionIds: BOOT.recentSelectionIds.slice(),
+            items
+        };
+    }
+
+    async function setNodeLocationAio(target, {x, y} = {}) {
+        await ensureUiSeedCaptured();
+
+        const model0 = typeof target === "string"
+            ? (getCurrentGraphCells().find(cell => getIdFromModel(cell) === target) || findAnyModelByLabel(target))
+            : target;
+        const model = refreshModelRef(model0) || model0;
+        if (!model) throw new Error(`Could not resolve node: ${target}`);
+
+        const type = getNodeType(model);
+        if (type !== "opm.Object" && type !== "opm.Process") {
+            throw new Error(`Target must be opm.Object or opm.Process, got ${type}`);
+        }
+
+        if (!Number.isFinite(x) || !Number.isFinite(y)) {
+            throw new Error("Location update requires finite numeric x and y");
+        }
+
+        const before = {
+            id: getIdFromModel(model),
+            label: getLabelFromModel(model),
+            type,
+            position: getPositionFromModel(model),
+            size: getSizeFromModel(model)
+        };
+
+        if (getEmbeddedThingChildren(model, {deep: true}).length > 0) {
+            moveAndKeepChildrenPositionByPosition(model, x, y);
+        } else {
+            model.position(x, y, {});
+        }
+
+        const refreshed = refreshModelRef(model) || model;
+        rememberRecentSelection(refreshed);
+
+        const report = {
+            before,
+            after: {
+                id: getIdFromModel(refreshed),
+                label: getLabelFromModel(refreshed),
+                type: getNodeType(refreshed),
+                position: getPositionFromModel(refreshed),
+                size: getSizeFromModel(refreshed)
+            }
+        };
+        log("setNodeLocationAio", report);
+        return report;
     }
 
     function snapshotRuntimeState() {
@@ -3538,6 +3708,7 @@
             throw new Error("bootstrapRuntimeOnce did not capture InitRappidService");
         }
 
+        startSelectionTracking();
         BOOT.bootstrappedOnce = true;
 
         return {
@@ -3635,9 +3806,11 @@
         setCurrentOpdWithoutRenderAio,
         exportCurrentOpdV2,
         exportEntireOpdTree,
-        importEntireOpdTreeAio
+        importEntireOpdTreeAio,
+        getCurrentOpdNodeLocations: getCurrentOpdNodeLocationList,
+        setNodeLocationAio
     };
-    __opcloudSingleBoot._findAnyModelByLabel = findAnyModelByLabel
+    __opcloudSingleBoot._findAnyModelByLabel = findAnyModelByLabel;
     console.log("OPCloud single-boot toolkit loaded");
 })();
 

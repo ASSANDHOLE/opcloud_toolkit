@@ -141,6 +141,27 @@
             };
         }
 
+        if (action === "getObjectLocations") {
+            requireBootstrapped(api);
+            const report = await api.getCurrentOpdNodeLocations();
+            return {
+                status: getStatus(),
+                report
+            };
+        }
+
+        if (action === "setObjectLocation") {
+            requireBootstrapped(api);
+            const nodeId = payload?.nodeId ?? null;
+            const x = payload?.x;
+            const y = payload?.y;
+            const report = await api.setNodeLocationAio(nodeId, {x, y});
+            return {
+                status: getStatus(),
+                report
+            };
+        }
+
         throw new Error(`Unsupported action: ${action}`);
     }
 
