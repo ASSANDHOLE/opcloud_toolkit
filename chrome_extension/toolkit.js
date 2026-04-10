@@ -3491,36 +3491,59 @@
             };
         }
 
-        async function importOpdSubtree(entry) {
+        function summarizeImportError(error) {
+            if (!error) return {message: "Unknown error"};
+            return {
+                name: error?.name ?? null,
+                message: error?.message ?? String(error),
+                stack: typeof error?.stack === "string" ? error.stack : null
+            };
+        }
+
+        async function importOpdSubtree(entry, overall) {
             const childEntries = sortChildrenLikePath(getChildEntries(entry.hierarchy.opdId));
 
             for (const childEntry of childEntries) {
-                await navigateToExportedOpdId(entry.hierarchy.opdId);
+                try {
+                    await navigateToExportedOpdId(entry.hierarchy.opdId);
 
-                const unfoldRep = await expandFromParentIntoChildEntry(childEntry);
+                    const unfoldRep = await expandFromParentIntoChildEntry(childEntry);
 
-                setRuntimeOpdId(childEntry.hierarchy.opdId, unfoldRep.runtimeChildOpdId);
+                    setRuntimeOpdId(childEntry.hierarchy.opdId, unfoldRep.runtimeChildOpdId);
 
-                log("importEntireOpdTree.mapRuntimeOpdId", {
-                    exportedOpdId: childEntry.hierarchy.opdId,
-                    exportedOpdName: childEntry.hierarchy.opdName,
-                    runtimeOpdId: unfoldRep.runtimeChildOpdId,
-                    runtimeOpd: unfoldRep.runtimeChildOpd,
-                    mode: unfoldRep.mode,
-                    sameRuntimeOpdAsParent: unfoldRep.sameRuntimeOpdAsParent
-                });
+                    log("importEntireOpdTree.mapRuntimeOpdId", {
+                        exportedOpdId: childEntry.hierarchy.opdId,
+                        exportedOpdName: childEntry.hierarchy.opdName,
+                        runtimeOpdId: unfoldRep.runtimeChildOpdId,
+                        runtimeOpd: unfoldRep.runtimeChildOpd,
+                        mode: unfoldRep.mode,
+                        sameRuntimeOpdAsParent: unfoldRep.sameRuntimeOpdAsParent
+                    });
 
-                if (unfoldRep.mode === "unfold" && unfoldRep.newlyCreated) {
                     if (cleanupGeneratedLinks) {
                         await cleanupAllExistingLinksAio();
                     }
-                    if (cleanupGeneratedObjects) {
-                        await removeAutoScaffoldInCurrentOpd(childEntry);
+                    if (unfoldRep.mode === "unfold" && unfoldRep.newlyCreated) {
+                        if (cleanupGeneratedObjects) {
+                            await removeAutoScaffoldInCurrentOpd(childEntry);
+                        }
                     }
-                }
 
-                await rebuildSingleOpdEntry(childEntry);
-                await importOpdSubtree(childEntry);
+                    await rebuildSingleOpdEntry(childEntry);
+                    await importOpdSubtree(childEntry, overall);
+                } catch (error) {
+                    const failure = {
+                        exportedOpdId: childEntry?.hierarchy?.opdId ?? null,
+                        exportedOpdName: childEntry?.hierarchy?.opdName ?? null,
+                        exportedParentOpdId: childEntry?.hierarchy?.parentOpdId ?? null,
+                        exportedOpdPath: childEntry?.hierarchy?.opdPath || [],
+                        parentRuntimeOpdId: getRuntimeOpdId(entry?.hierarchy?.opdId),
+                        currentRuntimeOpd: summarizeOpd(getCurrentOpd()),
+                        error: summarizeImportError(error)
+                    };
+                    overall.errors.push(failure);
+                    log("importEntireOpdTree.child.failed", failure);
+                }
             }
         }
 
@@ -3542,6 +3565,7 @@
         const overall = {
             startedAt: new Date().toISOString(),
             root: null,
+            errors: [],
             runtimeOpdIdByExportedOpdId: null,
             completedAt: null
         };
@@ -3549,7 +3573,7 @@
         overall.root = await rebuildRootSd();
 
         const sdEntry = findOpdEntryById("SD");
-        await importOpdSubtree(sdEntry);
+        await importOpdSubtree(sdEntry, overall);
 
         overall.runtimeOpdIdByExportedOpdId =
             Object.fromEntries(runtimeOpdIdByExportedOpdId.entries());
@@ -3813,4 +3837,3 @@
     __opcloudSingleBoot._findAnyModelByLabel = findAnyModelByLabel;
     console.log("OPCloud single-boot toolkit loaded");
 })();
-
